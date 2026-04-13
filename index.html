@@ -14,56 +14,91 @@ body {
 header {
     text-align:center;
     padding:20px;
-    font-size:28px;
+    font-size:32px;
     color:#c084fc;
+    font-weight:bold;
 }
 
 .box {
     background:#140026;
     padding:20px;
     margin:20px auto;
-    width:320px;
-    border-radius:12px;
+    width:340px;
+    border-radius:15px;
     text-align:center;
+    box-shadow:0 0 15px rgba(123,47,247,0.4);
 }
 
 input {
-    padding:10px;
+    padding:12px;
     width:90%;
     margin:10px;
     background:#1a1a1a;
     color:white;
     border:none;
+    border-radius:8px;
 }
 
 button {
-    padding:10px;
+    padding:10px 15px;
     background:#7b2ff7;
     color:white;
     border:none;
+    border-radius:8px;
     cursor:pointer;
+    transition:0.3s;
+}
+
+button:hover {
+    background:#9d4edd;
 }
 
 .results {
     display:flex;
     flex-wrap:wrap;
     justify-content:center;
+    padding:20px;
 }
 
 .card {
     background:#1e0033;
     margin:10px;
-    padding:10px;
-    width:200px;
+    padding:15px;
+    width:220px;
+    border-radius:12px;
+    box-shadow:0 0 10px rgba(0,0,0,0.5);
+}
+
+.card h3 {
+    color:#c084fc;
 }
 
 #chatBox {
     position:fixed;
     bottom:80px;
     right:20px;
-    width:250px;
+    width:260px;
     background:#140026;
     padding:10px;
+    border-radius:10px;
+    font-size:14px;
+}
+
+#chatInput {
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    width:200px;
+    padding:10px;
+    background:#1a1a1a;
+    color:white;
+    border:none;
+}
+
+#chatBtn {
+    position:fixed;
+    bottom:20px;
+    right:230px;
 }
 </style>
 </head>
@@ -73,12 +108,12 @@ button {
 <header>🎬 FilmGenie</header>
 
 <div class="box">
-<input id="sceneInput" placeholder="Describe scene">
+<input id="sceneInput" placeholder="Describe scene (e.g. space, war)">
 <button onclick="scene()">Scene</button>
 </div>
 
 <div class="box">
-<input id="moodInput" placeholder="Mood">
+<input id="moodInput" placeholder="Mood (happy, sad, romantic)">
 <button onclick="mood()">Mood</button>
 </div>
 
@@ -88,76 +123,71 @@ button {
 </div>
 
 <div class="box">
-<button onclick="surprise()">Surprise</button>
+<button onclick="surprise()">🎲 Surprise Me</button>
 </div>
 
 <div id="results" class="results"></div>
 
 <!-- Chatbot -->
 <div id="chatBox"></div>
-<input id="chatInput" style="position:fixed;bottom:20px;right:20px;">
-<button onclick="chat()" style="position:fixed;bottom:20px;right:200px;">Send</button>
+<input id="chatInput" placeholder="Ask something...">
+<button id="chatBtn" onclick="chat()">Send</button>
 
 <script>
 
 const API = "https://filmgenie-fr1z.onrender.com";
 
 function display(data){
-    let div=document.getElementById("results");
-    div.innerHTML="";
+    let div = document.getElementById("results");
+    div.innerHTML = "";
 
-    if(!data || data.length===0){
-        div.innerHTML="<p>No results found</p>";
+    if(!data || data.length === 0){
+        div.innerHTML = "<p>No movies found</p>";
         return;
     }
 
-    data.forEach(m=>{
-        div.innerHTML+=`<div class="card">
-        <h3>${m.title}</h3>
-        <p>${m.overview || "No description"}</p>
+    data.forEach(m => {
+        div.innerHTML += `
+        <div class="card">
+            <h3>${m.title}</h3>
+            <p>${m.overview ? m.overview.substring(0,100) + "..." : ""}</p>
+            <p><b>⭐ Rating:</b> ${m.vote_average || "N/A"}</p>
         </div>`;
     });
 }
 
-// SCENE
 async function scene(){
-    let val=document.getElementById("sceneInput").value;
-    let res=await fetch(`${API}/recommend?q=${val}`);
-    let data=await res.json();
-    display(data);
+    let val = document.getElementById("sceneInput").value;
+    let res = await fetch(API + "/recommend?q=" + val);
+    display(await res.json());
 }
 
-// MOOD
 async function mood(){
-    let val=document.getElementById("moodInput").value;
-    let res=await fetch(`${API}/mood?mood=${val}`);
-    let data=await res.json();
-    display(data);
+    let val = document.getElementById("moodInput").value;
+    let res = await fetch(API + "/mood?mood=" + val);
+    display(await res.json());
 }
 
-// PERSONALITY
 async function personality(){
-    let val=document.getElementById("scoreInput").value;
-    let res=await fetch(`${API}/recommend?q=${val}`);
-    let data=await res.json();
-    display(data);
+    let val = document.getElementById("scoreInput").value;
+    let res = await fetch(API + "/recommend?q=" + val);
+    display(await res.json());
 }
 
-// SURPRISE
 async function surprise(){
-    let res=await fetch(`${API}/surprise`);
-    let data=await res.json();
-    display(data);
+    let res = await fetch(API + "/recommend?q=random");
+    display(await res.json());
 }
 
-// CHAT
 async function chat(){
-    let input=document.getElementById("chatInput").value;
-    let res=await fetch(`${API}/chat?msg=${input}`);
-    let data=await res.json();
+    let input = document.getElementById("chatInput").value;
+
+    let res = await fetch(API + "/recommend?q=" + input);
+    let data = await res.json();
 
     document.getElementById("chatBox").innerHTML =
-    "<b>You:</b> "+input+"<br><b>FilmGenie:</b> "+data.reply;
+    "<b>You:</b> " + input + "<br><b>FilmGenie:</b> " +
+    (data.length ? data.map(m => m.title).join(", ") : "No suggestions");
 }
 
 </script>
