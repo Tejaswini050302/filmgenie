@@ -9,15 +9,18 @@ CORS(app)
 # -------------------------------
 # LOAD DATA
 # -------------------------------
-movies = pd.read_csv("data/movies.csv")
+movies = pd.read_csv("data/movie.csv")
 
-# Convert columns to string
+# 🔥 FIX NaN → valid JSON
+movies = movies.fillna("")
+
+# Convert to string
 movies["overview"] = movies["overview"].astype(str)
 movies["genres"] = movies["genres"].astype(str)
 movies["keywords"] = movies["keywords"].astype(str)
 movies["title"] = movies["title"].astype(str)
 
-# 🔥 CREATE ONE SEARCH FIELD (IMPORTANT)
+# 🔥 COMBINE TEXT (SMART SEARCH)
 movies["content"] = (
     movies["overview"] + " " +
     movies["genres"] + " " +
@@ -33,18 +36,19 @@ def home():
     return "FilmGenie Backend Running!"
 
 # -------------------------------
-# SCENE / SEARCH
+# RECOMMEND (SCENE)
 # -------------------------------
 @app.route("/recommend")
 def recommend():
     query = request.args.get("q", "").lower()
 
-    if not query:
-        return jsonify([])
-
     results = movies[
         movies["content"].str.lower().str.contains(query, na=False)
     ]
+
+    # 🔥 fallback (never empty)
+    if results.empty:
+        return jsonify(movies.sample(10).to_dict(orient="records"))
 
     return jsonify(results.head(10).to_dict(orient="records"))
 
@@ -56,17 +60,21 @@ def mood():
     mood = request.args.get("mood", "").lower()
 
     if mood == "happy":
-        query = "comedy fun family"
+        query = "comedy"
     elif mood == "sad":
-        query = "drama emotional"
+        query = "drama"
     elif mood == "romantic":
-        query = "romance love"
+        query = "romance"
     else:
-        query = "action thriller"
+        query = "action"
 
     results = movies[
         movies["content"].str.lower().str.contains(query, na=False)
     ]
+
+    # 🔥 fallback
+    if results.empty:
+        return jsonify(movies.sample(10).to_dict(orient="records"))
 
     return jsonify(results.head(10).to_dict(orient="records"))
 
@@ -85,19 +93,20 @@ def chat():
     msg = request.args.get("msg", "").lower()
 
     if "sad" in msg:
-        reply = "Watch a drama like Titanic."
+        reply = "Try watching an emotional drama."
     elif "happy" in msg:
-        reply = "Try a comedy movie!"
+        reply = "Go for a fun comedy!"
     elif "action" in msg:
-        reply = "Go for an action thriller!"
+        reply = "Watch an action thriller!"
     else:
-        reply = "Tell me your mood or a scene you like."
+        reply = "Tell me your mood or a scene."
 
     return jsonify({"reply": reply})
 
 # -------------------------------
-# RUN (RENDER FIX)
+# RUN (RENDER)
 # -------------------------------
 if __name__ == "__main__":
     print("APP STARTED SUCCESSFULLY")
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
