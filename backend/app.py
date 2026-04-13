@@ -9,6 +9,10 @@ CORS(app)
 # Load dataset
 movies = pd.read_csv("data/movies.csv")
 
+movies["genres"] = movies["genres"].astype(str)
+movies["keywords"] = movies["keywords"].astype(str)
+movies["overview"] = movies["overview"].astype(str)
+
 # -------------------------------
 # HOME ROUTE (TEST)
 # -------------------------------
