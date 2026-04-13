@@ -92,6 +92,11 @@ button {
     cursor:pointer;
 }
 
+/* SELECTED QUIZ OPTION */
+.selected {
+    background:#c084fc !important;
+}
+
 /* MODALS */
 #movieModal, #quizModal {
     display:none;
@@ -133,7 +138,7 @@ button {
     <button onclick="mood('action')">🔥 Action</button>
     <button onclick="surprise()">🎲 Surprise</button>
     <button onclick="showWatchlist()">❤️ My Watchlist</button>
-    <button onclick="openQuiz()">Personality Based movies </button>
+    <button onclick="openQuiz()">🧠 Quiz</button>
 </div>
 
 <div id="results" class="results"></div>
@@ -150,29 +155,29 @@ button {
 
 <!-- 🧠 QUIZ MODAL -->
 <div id="quizModal">
-    <div class="modal-box">
-        <h2>Personality Quiz 🧠</h2>
+  <div class="modal-box">
+    <h2>Personality Quiz 🧠</h2>
 
-        <p>1. Pick your vibe:</p>
-        <button onclick="addScore(2)">Calm</button>
-        <button onclick="addScore(5)">Fun</button>
-        <button onclick="addScore(8)">Intense</button>
+    <p>1. Pick your vibe:</p>
+    <button onclick="selectOption(1,2,this)">Calm</button>
+    <button onclick="selectOption(1,5,this)">Fun</button>
+    <button onclick="selectOption(1,8,this)">Intense</button>
 
-        <p>2. Weekend plan:</p>
-        <button onclick="addScore(2)">Netflix</button>
-        <button onclick="addScore(5)">Hangout</button>
-        <button onclick="addScore(8)">Adventure</button>
+    <p>2. Weekend plan:</p>
+    <button onclick="selectOption(2,2,this)">Netflix</button>
+    <button onclick="selectOption(2,5,this)">Hangout</button>
+    <button onclick="selectOption(2,8,this)">Adventure</button>
 
-        <p>3. Favorite genre:</p>
-        <button onclick="addScore(2)">Romance</button>
-        <button onclick="addScore(5)">Comedy</button>
-        <button onclick="addScore(8)">Action</button>
+    <p>3. Favorite genre:</p>
+    <button onclick="selectOption(3,2,this)">Romance</button>
+    <button onclick="selectOption(3,5,this)">Comedy</button>
+    <button onclick="selectOption(3,8,this)">Action</button>
 
-        <br><br>
+    <br><br>
 
-        <button onclick="submitQuiz()">Get Movies 🎬</button>
-        <button onclick="closeQuiz()">Close</button>
-    </div>
+    <button onclick="submitQuiz()">Get Movies 🎬</button>
+    <button onclick="closeQuiz()">Close</button>
+  </div>
 </div>
 
 <script>
@@ -181,7 +186,7 @@ const API = "https://filmgenie-fr1z.onrender.com";
 const TMDB_API_KEY = "6701680a60181e103f2b432a7e39663c";
 
 let currentMovies = [];
-let quizScore = 0;
+let answers = {};
 
 // 🎬 POSTER
 async function getPoster(title){
@@ -226,7 +231,7 @@ async function display(data){
     }
 }
 
-// ❤️ WATCHLIST TOGGLE
+// ❤️ WATCHLIST
 function toggleWatchlist(index){
     let movie = currentMovies[index];
     let list = JSON.parse(localStorage.getItem("watchlist")) || [];
@@ -241,13 +246,12 @@ function toggleWatchlist(index){
     display(currentMovies);
 }
 
-// 📂 WATCHLIST
 function showWatchlist(){
     let list = JSON.parse(localStorage.getItem("watchlist")) || [];
     display(list);
 }
 
-// 🎬 DETAILS MODAL
+// 🎬 DETAILS
 function showDetails(index){
     let m = currentMovies[index];
 
@@ -263,8 +267,17 @@ function closeModal(){
 }
 
 // 🧠 QUIZ
+function selectOption(q, score, btn){
+    answers[q] = score;
+
+    let buttons = btn.parentElement.querySelectorAll("button");
+    buttons.forEach(b => b.classList.remove("selected"));
+
+    btn.classList.add("selected");
+}
+
 function openQuiz(){
-    quizScore = 0;
+    answers = {};
     document.getElementById("quizModal").style.display = "flex";
 }
 
@@ -272,12 +285,339 @@ function closeQuiz(){
     document.getElementById("quizModal").style.display = "none";
 }
 
-function addScore(val){
-    quizScore += val;
+async function submitQuiz(){
+    if(Object.keys(answers).length < 3){
+        alert("Answer all questions!");
+        return;
+    }
+
+    let total = Object.values(answers).reduce((a,b)=>a+b,0);
+
+    let res = await fetch(API + "/personality?score=" + total);
+    let data = await res.json();
+
+    closeQuiz();
+    display(data);
+}
+
+// 🔍 SEARCH
+async function scene(){
+    let val = document.getElementById("sceneInput").value;
+    let res = await fetch(API + "/recommend?q=" + val);
+    display(await res.json());
+}
+
+// 🎭 MOOD
+async function mood(type){
+    let res = await fetch(API + "/mood?mood=" + type);
+    display(await res.json());
+}
+
+// 🎲 SURPRISE
+async function surprise(){
+    let res = await fetch(API + "/recommend?q=random");
+    display(await res.json());
+}
+
+</script>
+
+</body>
+</html><!DOCTYPE html>
+<html>
+<head>
+<title>FilmGenie 🎬</title>
+
+<style>
+body {
+    margin:0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg,#0a0014,#140026,#1f003d);
+    color:white;
+}
+
+header {
+    text-align:center;
+    padding:20px;
+    font-size:28px;
+    color:#c084fc;
+}
+
+.search-bar {
+    text-align:center;
+}
+
+.search-bar input {
+    width:300px;
+    padding:12px;
+    border-radius:20px;
+    border:none;
+    background:#1a1a1a;
+    color:white;
+}
+
+.search-bar button {
+    padding:12px;
+    background:#7b2ff7;
+    border:none;
+    color:white;
+    border-radius:20px;
+}
+
+.filters {
+    text-align:center;
+    margin:20px;
+}
+
+.filters button {
+    margin:5px;
+    padding:10px;
+    background:#2a004d;
+    border:none;
+    color:white;
+    border-radius:20px;
+    cursor:pointer;
+}
+
+.results {
+    display:grid;
+    grid-template-columns: repeat(auto-fill,minmax(200px,1fr));
+    gap:20px;
+    padding:20px;
+}
+
+.card {
+    background:#1e0033;
+    border-radius:12px;
+    overflow:hidden;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.card:hover {
+    transform:scale(1.05);
+}
+
+.card img {
+    width:100%;
+    height:300px;
+    object-fit:cover;
+}
+
+.card-content {
+    padding:10px;
+}
+
+button {
+    background:#7b2ff7;
+    border:none;
+    padding:8px;
+    border-radius:8px;
+    color:white;
+    cursor:pointer;
+}
+
+/* SELECTED QUIZ OPTION */
+.selected {
+    background:#c084fc !important;
+}
+
+/* MODALS */
+#movieModal, #quizModal {
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.85);
+    justify-content:center;
+    align-items:center;
+    z-index:999;
+}
+
+.modal-box {
+    background:#140026;
+    padding:20px;
+    border-radius:12px;
+    width:350px;
+    max-height:80%;
+    overflow:auto;
+}
+</style>
+</head>
+
+<body>
+
+<header>🎬 FilmGenie</header>
+
+<div class="search-bar">
+    <input id="sceneInput" placeholder="Search movies...">
+    <button onclick="scene()">Search</button>
+</div>
+
+<div class="filters">
+    <button onclick="mood('happy')">😊 Happy</button>
+    <button onclick="mood('sad')">😢 Sad</button>
+    <button onclick="mood('romantic')">❤️ Romantic</button>
+    <button onclick="mood('action')">🔥 Action</button>
+    <button onclick="surprise()">🎲 Surprise</button>
+    <button onclick="showWatchlist()">❤️ My Watchlist</button>
+    <button onclick="openQuiz()">🧠 Quiz</button>
+</div>
+
+<div id="results" class="results"></div>
+
+<!-- 🎬 MOVIE MODAL -->
+<div id="movieModal">
+    <div class="modal-box">
+        <h2 id="modalTitle"></h2>
+        <p id="modalOverview"></p>
+        <p id="modalRating"></p>
+        <button onclick="closeModal()">Close</button>
+    </div>
+</div>
+
+<!-- 🧠 QUIZ MODAL -->
+<div id="quizModal">
+  <div class="modal-box">
+    <h2>Personality Quiz 🧠</h2>
+
+    <p>1. Pick your vibe:</p>
+    <button onclick="selectOption(1,2,this)">Calm</button>
+    <button onclick="selectOption(1,5,this)">Fun</button>
+    <button onclick="selectOption(1,8,this)">Intense</button>
+
+    <p>2. Weekend plan:</p>
+    <button onclick="selectOption(2,2,this)">Netflix</button>
+    <button onclick="selectOption(2,5,this)">Hangout</button>
+    <button onclick="selectOption(2,8,this)">Adventure</button>
+
+    <p>3. Favorite genre:</p>
+    <button onclick="selectOption(3,2,this)">Romance</button>
+    <button onclick="selectOption(3,5,this)">Comedy</button>
+    <button onclick="selectOption(3,8,this)">Action</button>
+
+    <br><br>
+
+    <button onclick="submitQuiz()">Get Movies 🎬</button>
+    <button onclick="closeQuiz()">Close</button>
+  </div>
+</div>
+
+<script>
+
+const API = "https://filmgenie-fr1z.onrender.com";
+const TMDB_API_KEY = "6701680a60181e103f2b432a7e39663c";
+
+let currentMovies = [];
+let answers = {};
+
+// 🎬 POSTER
+async function getPoster(title){
+    try{
+        let res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}`);
+        let data = await res.json();
+        if(data.results.length > 0){
+            return "https://image.tmdb.org/t/p/w500" + data.results[0].poster_path;
+        }
+    }catch(e){}
+    return "https://dummyimage.com/300x450/1e0033/c084fc&text=FilmGenie";
+}
+
+// ❤️ CHECK SAVED
+function isSaved(title){
+    let list = JSON.parse(localStorage.getItem("watchlist")) || [];
+    return list.some(m => m.title === title);
+}
+
+// 🎬 DISPLAY
+async function display(data){
+    let div = document.getElementById("results");
+    div.innerHTML = "";
+    currentMovies = data;
+
+    for(let i=0;i<data.length;i++){
+        let m = data[i];
+        let poster = await getPoster(m.title);
+
+        div.innerHTML += `
+        <div class="card" onclick="showDetails(${i})">
+            <img src="${poster}">
+            <div class="card-content">
+                <h3>${m.title}</h3>
+                <p>⭐ ${m.vote_average || "N/A"}</p>
+
+                <button onclick="event.stopPropagation(); toggleWatchlist(${i})">
+                    ${isSaved(m.title) ? "❌ Remove" : "❤️ Save"}
+                </button>
+            </div>
+        </div>`;
+    }
+}
+
+// ❤️ WATCHLIST
+function toggleWatchlist(index){
+    let movie = currentMovies[index];
+    let list = JSON.parse(localStorage.getItem("watchlist")) || [];
+
+    if(isSaved(movie.title)){
+        list = list.filter(m => m.title !== movie.title);
+    } else {
+        list.push(movie);
+    }
+
+    localStorage.setItem("watchlist", JSON.stringify(list));
+    display(currentMovies);
+}
+
+function showWatchlist(){
+    let list = JSON.parse(localStorage.getItem("watchlist")) || [];
+    display(list);
+}
+
+// 🎬 DETAILS
+function showDetails(index){
+    let m = currentMovies[index];
+
+    document.getElementById("modalTitle").innerText = m.title;
+    document.getElementById("modalOverview").innerText = m.overview || "No description";
+    document.getElementById("modalRating").innerText = "⭐ " + (m.vote_average || "N/A");
+
+    document.getElementById("movieModal").style.display = "flex";
+}
+
+function closeModal(){
+    document.getElementById("movieModal").style.display = "none";
+}
+
+// 🧠 QUIZ
+function selectOption(q, score, btn){
+    answers[q] = score;
+
+    let buttons = btn.parentElement.querySelectorAll("button");
+    buttons.forEach(b => b.classList.remove("selected"));
+
+    btn.classList.add("selected");
+}
+
+function openQuiz(){
+    answers = {};
+    document.getElementById("quizModal").style.display = "flex";
+}
+
+function closeQuiz(){
+    document.getElementById("quizModal").style.display = "none";
 }
 
 async function submitQuiz(){
-    let res = await fetch(API + "/personality?score=" + quizScore);
+    if(Object.keys(answers).length < 3){
+        alert("Answer all questions!");
+        return;
+    }
+
+    let total = Object.values(answers).reduce((a,b)=>a+b,0);
+
+    let res = await fetch(API + "/personality?score=" + total);
     let data = await res.json();
 
     closeQuiz();
