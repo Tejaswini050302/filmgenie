@@ -6,8 +6,8 @@
 <style>
 body {
     margin:0;
-    font-family: 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg,#0a0014,#140026,#1f003d);
+    font-family:'Segoe UI',sans-serif;
+    background:linear-gradient(135deg,#0a0014,#140026,#1f003d);
     color:white;
 }
 
@@ -18,9 +18,7 @@ header {
     color:#c084fc;
 }
 
-.search-bar {
-    text-align:center;
-}
+.search-bar { text-align:center; }
 
 .search-bar input {
     width:300px;
@@ -56,7 +54,7 @@ header {
 
 .results {
     display:grid;
-    grid-template-columns: repeat(auto-fill,minmax(200px,1fr));
+    grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
     gap:20px;
     padding:20px;
 }
@@ -69,9 +67,7 @@ header {
     transition:0.3s;
 }
 
-.card:hover {
-    transform:scale(1.05);
-}
+.card:hover { transform:scale(1.05); }
 
 .card img {
     width:100%;
@@ -79,9 +75,7 @@ header {
     object-fit:cover;
 }
 
-.card-content {
-    padding:10px;
-}
+.card-content { padding:10px; }
 
 button {
     background:#7b2ff7;
@@ -92,7 +86,7 @@ button {
     cursor:pointer;
 }
 
-/* SELECTED QUIZ OPTION */
+/* Selected option */
 .selected {
     background:#c084fc !important;
 }
@@ -108,16 +102,13 @@ button {
     background:rgba(0,0,0,0.85);
     justify-content:center;
     align-items:center;
-    z-index:999;
 }
 
 .modal-box {
     background:#140026;
     padding:20px;
     border-radius:12px;
-    width:350px;
-    max-height:80%;
-    overflow:auto;
+    width:360px;
 }
 </style>
 </head>
@@ -137,47 +128,59 @@ button {
     <button onclick="mood('romantic')">❤️ Romantic</button>
     <button onclick="mood('action')">🔥 Action</button>
     <button onclick="surprise()">🎲 Surprise</button>
-    <button onclick="showWatchlist()">❤️ My Watchlist</button>
+    <button onclick="showWatchlist()">❤️ Watchlist</button>
     <button onclick="openQuiz()">🧠 Quiz</button>
 </div>
 
 <div id="results" class="results"></div>
 
-<!-- 🎬 MOVIE MODAL -->
+<!-- MOVIE MODAL -->
 <div id="movieModal">
-    <div class="modal-box">
-        <h2 id="modalTitle"></h2>
-        <p id="modalOverview"></p>
-        <p id="modalRating"></p>
-        <button onclick="closeModal()">Close</button>
-    </div>
+<div class="modal-box">
+<h2 id="modalTitle"></h2>
+<p id="modalOverview"></p>
+<p id="modalRating"></p>
+<button onclick="closeModal()">Close</button>
+</div>
 </div>
 
-<!-- 🧠 QUIZ MODAL -->
+<!-- QUIZ MODAL -->
 <div id="quizModal">
-  <div class="modal-box">
-    <h2>Personality Quiz 🧠</h2>
+<div class="modal-box">
 
-    <p>1. Pick your vibe:</p>
-    <button onclick="selectOption(1,2,this)">Calm</button>
-    <button onclick="selectOption(1,5,this)">Fun</button>
-    <button onclick="selectOption(1,8,this)">Intense</button>
+<h2>Personality Quiz 🧠</h2>
 
-    <p>2. Weekend plan:</p>
-    <button onclick="selectOption(2,2,this)">Netflix</button>
-    <button onclick="selectOption(2,5,this)">Hangout</button>
-    <button onclick="selectOption(2,8,this)">Adventure</button>
+<p>1. Your vibe?</p>
+<button onclick="selectOption(1,2,this)">Calm</button>
+<button onclick="selectOption(1,5,this)">Fun</button>
+<button onclick="selectOption(1,8,this)">Intense</button>
 
-    <p>3. Favorite genre:</p>
-    <button onclick="selectOption(3,2,this)">Romance</button>
-    <button onclick="selectOption(3,5,this)">Comedy</button>
-    <button onclick="selectOption(3,8,this)">Action</button>
+<p>2. Weekend?</p>
+<button onclick="selectOption(2,2,this)">Stay home</button>
+<button onclick="selectOption(2,5,this)">Friends</button>
+<button onclick="selectOption(2,8,this)">Adventure</button>
 
-    <br><br>
+<p>3. Favorite genre?</p>
+<button onclick="selectOption(3,2,this)">Romance</button>
+<button onclick="selectOption(3,5,this)">Comedy</button>
+<button onclick="selectOption(3,8,this)">Action</button>
 
-    <button onclick="submitQuiz()">Get Movies 🎬</button>
-    <button onclick="closeQuiz()">Close</button>
-  </div>
+<p>4. Choose a setting</p>
+<button onclick="selectOption(4,2,this)">City life</button>
+<button onclick="selectOption(4,5,this)">Beach</button>
+<button onclick="selectOption(4,8,this)">War zone</button>
+
+<p>5. Pick a character type</p>
+<button onclick="selectOption(5,2,this)">Lover</button>
+<button onclick="selectOption(5,5,this)">Funny friend</button>
+<button onclick="selectOption(5,8,this)">Hero</button>
+
+<br><br>
+
+<button onclick="submitQuiz()">Get Movies 🎬</button>
+<button onclick="closeQuiz()">Close</button>
+
+</div>
 </div>
 
 <script>
@@ -188,134 +191,96 @@ const TMDB_API_KEY = "6701680a60181e103f2b432a7e39663c";
 let currentMovies = [];
 let answers = {};
 
-// 🎬 POSTER
+// POSTER
 async function getPoster(title){
     try{
         let res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}`);
         let data = await res.json();
-        if(data.results.length > 0){
-            return "https://image.tmdb.org/t/p/w500" + data.results[0].poster_path;
+        if(data.results.length>0){
+            return "https://image.tmdb.org/t/p/w500"+data.results[0].poster_path;
         }
     }catch(e){}
     return "https://dummyimage.com/300x450/1e0033/c084fc&text=FilmGenie";
 }
 
-// ❤️ CHECK SAVED
-function isSaved(title){
-    let list = JSON.parse(localStorage.getItem("watchlist")) || [];
-    return list.some(m => m.title === title);
-}
-
-// 🎬 DISPLAY
+// DISPLAY
 async function display(data){
-    let div = document.getElementById("results");
-    div.innerHTML = "";
-    currentMovies = data;
+    let div=document.getElementById("results");
+    div.innerHTML="";
+    currentMovies=data;
 
     for(let i=0;i<data.length;i++){
-        let m = data[i];
-        let poster = await getPoster(m.title);
+        let m=data[i];
+        let poster=await getPoster(m.title);
 
-        div.innerHTML += `
+        div.innerHTML+=`
         <div class="card" onclick="showDetails(${i})">
             <img src="${poster}">
             <div class="card-content">
                 <h3>${m.title}</h3>
-                <p>⭐ ${m.vote_average || "N/A"}</p>
-
-                <button onclick="event.stopPropagation(); toggleWatchlist(${i})">
-                    ${isSaved(m.title) ? "❌ Remove" : "❤️ Save"}
-                </button>
+                <p>⭐ ${m.vote_average||"N/A"}</p>
             </div>
         </div>`;
     }
 }
 
-// ❤️ WATCHLIST
-function toggleWatchlist(index){
-    let movie = currentMovies[index];
-    let list = JSON.parse(localStorage.getItem("watchlist")) || [];
-
-    if(isSaved(movie.title)){
-        list = list.filter(m => m.title !== movie.title);
-    } else {
-        list.push(movie);
-    }
-
-    localStorage.setItem("watchlist", JSON.stringify(list));
-    display(currentMovies);
+// DETAILS
+function showDetails(i){
+    let m=currentMovies[i];
+    modalTitle.innerText=m.title;
+    modalOverview.innerText=m.overview||"No description";
+    modalRating.innerText="⭐ "+(m.vote_average||"N/A");
+    movieModal.style.display="flex";
 }
+function closeModal(){ movieModal.style.display="none"; }
 
-function showWatchlist(){
-    let list = JSON.parse(localStorage.getItem("watchlist")) || [];
-    display(list);
-}
-
-// 🎬 DETAILS
-function showDetails(index){
-    let m = currentMovies[index];
-
-    document.getElementById("modalTitle").innerText = m.title;
-    document.getElementById("modalOverview").innerText = m.overview || "No description";
-    document.getElementById("modalRating").innerText = "⭐ " + (m.vote_average || "N/A");
-
-    document.getElementById("movieModal").style.display = "flex";
-}
-
-function closeModal(){
-    document.getElementById("movieModal").style.display = "none";
-}
-
-// 🧠 QUIZ
-function selectOption(q, score, btn){
-    answers[q] = score;
-
-    let buttons = btn.parentElement.querySelectorAll("button");
-    buttons.forEach(b => b.classList.remove("selected"));
-
+// QUIZ LOGIC
+function selectOption(q,score,btn){
+    answers[q]=score;
+    let btns=btn.parentElement.querySelectorAll("button");
+    btns.forEach(b=>b.classList.remove("selected"));
     btn.classList.add("selected");
 }
 
 function openQuiz(){
-    answers = {};
-    document.getElementById("quizModal").style.display = "flex";
+    answers={};
+    quizModal.style.display="flex";
 }
 
 function closeQuiz(){
-    document.getElementById("quizModal").style.display = "none";
+    quizModal.style.display="none";
 }
 
 async function submitQuiz(){
-    if(Object.keys(answers).length < 3){
+    if(Object.keys(answers).length<5){
         alert("Answer all questions!");
         return;
     }
 
-    let total = Object.values(answers).reduce((a,b)=>a+b,0);
+    let total=Object.values(answers).reduce((a,b)=>a+b,0);
 
-    let res = await fetch(API + "/personality?score=" + total);
-    let data = await res.json();
+    let res=await fetch(API+"/personality?score="+total);
+    display(await res.json());
 
     closeQuiz();
-    display(data);
 }
 
-// 🔍 SEARCH
+// SEARCH
 async function scene(){
-    let val = document.getElementById("sceneInput").value;
-    let res = await fetch(API + "/recommend?q=" + val);
+    let val=sceneInput.value;
+    let res=await fetch(API+"/recommend?q="+val);
     display(await res.json());
 }
 
-// 🎭 MOOD
+// MOOD
 async function mood(type){
-    let res = await fetch(API + "/mood?mood=" + type);
+    let res=await fetch(API+"/mood?mood="+type);
     display(await res.json());
 }
 
-// 🎲 SURPRISE
+// SURPRISE
 async function surprise(){
-    let res = await fetch(API + "/recommend?q=random");
+    let res=await fetch(API+"/recommend?q=random");
     display(await res.json());
 }
 
