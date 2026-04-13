@@ -6,6 +6,8 @@ from personality import personality_to_query
 import random
 import os
 
+print("APP STARTED SUCCESSFULLY")
+
 app = Flask(__name__)
 CORS(app)
 
