@@ -96,6 +96,16 @@ header {
     color:#ccc;
 }
 
+button {
+    background:#7b2ff7;
+    border:none;
+    padding:8px;
+    border-radius:8px;
+    color:white;
+    cursor:pointer;
+    margin-top:5px;
+}
+
 #chatBox {
     position:fixed;
     bottom:80px;
@@ -121,11 +131,6 @@ header {
     position:fixed;
     bottom:20px;
     right:230px;
-    background:#7b2ff7;
-    border:none;
-    color:white;
-    padding:10px;
-    cursor:pointer;
 }
 </style>
 </head>
@@ -175,6 +180,12 @@ async function getPoster(title){
     return "https://dummyimage.com/300x450/1e0033/c084fc&text=FilmGenie";
 }
 
+// 🔍 CHECK IF SAVED
+function isSaved(title){
+    let list = JSON.parse(localStorage.getItem("watchlist")) || [];
+    return list.some(m => m.title === title);
+}
+
 // 🎬 DISPLAY
 async function display(data){
     let div = document.getElementById("results");
@@ -200,12 +211,33 @@ async function display(data){
                 <p>${m.overview ? m.overview.substring(0,80) + "..." : ""}</p>
                 <p>⭐ ${m.vote_average || "N/A"}</p>
 
-                <button onclick="addToWatchlist(${i})">
-                    ❤️ Save
+                <button onclick="toggleWatchlist(${i})">
+                    ${isSaved(m.title) ? "❌ Remove" : "❤️ Save"}
                 </button>
             </div>
         </div>`;
     }
+}
+
+// ❤️ TOGGLE WATCHLIST
+function toggleWatchlist(index){
+    let movie = currentMovies[index];
+    let list = JSON.parse(localStorage.getItem("watchlist")) || [];
+
+    if(isSaved(movie.title)){
+        list = list.filter(m => m.title !== movie.title);
+    } else {
+        list.push(movie);
+    }
+
+    localStorage.setItem("watchlist", JSON.stringify(list));
+    display(currentMovies);
+}
+
+// 📂 SHOW WATCHLIST
+function showWatchlist(){
+    let list = JSON.parse(localStorage.getItem("watchlist")) || [];
+    display(list);
 }
 
 // 🔍 SEARCH
@@ -237,26 +269,6 @@ async function chat(){
     document.getElementById("chatBox").innerHTML =
     "<b>You:</b> " + input + "<br><b>FilmGenie:</b> " +
     (data.length ? data.map(m => m.title).join(", ") : "No suggestions");
-}
-
-// ❤️ WATCHLIST
-function addToWatchlist(index){
-    let movie = currentMovies[index];
-
-    let list = JSON.parse(localStorage.getItem("watchlist")) || [];
-
-    if(!list.find(m => m.title === movie.title)){
-        list.push(movie);
-        localStorage.setItem("watchlist", JSON.stringify(list));
-        alert("Added ❤️");
-    } else {
-        alert("Already saved!");
-    }
-}
-
-function showWatchlist(){
-    let list = JSON.parse(localStorage.getItem("watchlist")) || [];
-    display(list);
 }
 
 </script>
