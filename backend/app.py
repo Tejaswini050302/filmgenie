@@ -63,23 +63,22 @@ def mood():
     mood = request.args.get("mood", "").lower()
 
     if mood == "happy":
-        query = "comedy"
+        result = movies[movies["content"].str.contains("comedy|fun|family", case=False, na=False)]
+
     elif mood == "sad":
-        query = "drama"
+        result = movies[movies["content"].str.contains("drama|emotional|sad", case=False, na=False)]
+
     elif mood == "romantic":
-        query = "romance"
+        result = movies[movies["content"].str.contains("romance|love", case=False, na=False)]
+
+    elif mood == "action":
+        result = movies[movies["content"].str.contains("action|war|thriller", case=False, na=False)]
+
     else:
-        query = "action"
+        result = movies
 
-    results = movies[
-        movies["content"].str.lower().str.contains(query, na=False)
-    ]
-
-    # 🔥 fallback
-    if results.empty:
-        return jsonify(movies.sample(10).to_dict(orient="records"))
-
-    return jsonify(results.head(10).to_dict(orient="records"))
+    # 🎲 RANDOMIZE RESULTS
+    return jsonify(result.sample(min(12, len(result))).to_dict(orient="records"))
 
 # -------------------------------
 # SURPRISE
