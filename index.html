@@ -11,7 +11,6 @@ body {
     color:white;
 }
 
-/* HEADER */
 header {
     display:flex;
     justify-content:space-between;
@@ -21,7 +20,6 @@ header {
     color:#c084fc;
 }
 
-/* SEARCH BAR */
 .search-bar {
     text-align:center;
     margin-top:20px;
@@ -45,7 +43,6 @@ header {
     cursor:pointer;
 }
 
-/* FILTER BUTTONS */
 .filters {
     text-align:center;
     margin:20px;
@@ -59,14 +56,8 @@ header {
     color:white;
     border-radius:20px;
     cursor:pointer;
-    transition:0.3s;
 }
 
-.filters button:hover {
-    background:#7b2ff7;
-}
-
-/* MOVIE GRID */
 .results {
     display:grid;
     grid-template-columns: repeat(auto-fill, minmax(200px,1fr));
@@ -74,9 +65,7 @@ header {
     padding:30px;
 }
 
-/* CARD */
 .card {
-    position:relative;
     background:#1e0033;
     border-radius:12px;
     overflow:hidden;
@@ -107,7 +96,6 @@ header {
     color:#ccc;
 }
 
-/* CHAT */
 #chatBox {
     position:fixed;
     bottom:80px;
@@ -144,17 +132,13 @@ header {
 
 <body>
 
-<header>
-    🎬 FilmGenie
-</header>
+<header>🎬 FilmGenie</header>
 
-<!-- SEARCH -->
 <div class="search-bar">
-    <input id="sceneInput" placeholder="Search movies, scenes...">
+    <input id="sceneInput" placeholder="Search movies...">
     <button onclick="scene()">Search</button>
 </div>
 
-<!-- FILTERS -->
 <div class="filters">
     <button onclick="mood('happy')">😊 Happy</button>
     <button onclick="mood('sad')">😢 Sad</button>
@@ -164,10 +148,8 @@ header {
     <button onclick="showWatchlist()">❤️ My Watchlist</button>
 </div>
 
-<!-- RESULTS -->
 <div id="results" class="results"></div>
 
-<!-- CHAT -->
 <div id="chatBox"></div>
 <input id="chatInput" placeholder="Ask something...">
 <button id="chatBtn" onclick="chat()">Send</button>
@@ -175,15 +157,14 @@ header {
 <script>
 
 const API = "https://filmgenie-fr1z.onrender.com";
+const TMDB_API_KEY = "6701680a60181e103f2b432a7e39663c";
 
 let currentMovies = [];
-// 🎬 DISPLAY MOVIES
-const TMDB_API_KEY = "6701680a60181e103f2b432a7e39663c";
 
 // 🎬 GET POSTER
 async function getPoster(title){
     try{
-        let res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${title}`);
+        let res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}`);
         let data = await res.json();
 
         if(data.results && data.results.length > 0 && data.results[0].poster_path){
@@ -194,7 +175,7 @@ async function getPoster(title){
     return "https://dummyimage.com/300x450/1e0033/c084fc&text=FilmGenie";
 }
 
-// 🎬 DISPLAY (NEW)
+// 🎬 DISPLAY
 async function display(data){
     let div = document.getElementById("results");
     div.innerHTML = "";
@@ -204,11 +185,12 @@ async function display(data){
         return;
     }
 
-    currentMovies = data; // store movies
+    currentMovies = data;
 
-    data.forEach((m, i) => {
+    for(let i = 0; i < data.length; i++){
 
-        let poster = "https://dummyimage.com/300x450/1e0033/c084fc&text=FilmGenie";
+        let m = data[i];
+        let poster = await getPoster(m.title);
 
         div.innerHTML += `
         <div class="card">
@@ -223,7 +205,7 @@ async function display(data){
                 </button>
             </div>
         </div>`;
-    });
+    }
 }
 
 // 🔍 SEARCH
@@ -257,7 +239,7 @@ async function chat(){
     (data.length ? data.map(m => m.title).join(", ") : "No suggestions");
 }
 
-    // ❤️ ADD TO WATCHLIST
+// ❤️ WATCHLIST
 function addToWatchlist(index){
     let movie = currentMovies[index];
 
@@ -266,13 +248,12 @@ function addToWatchlist(index){
     if(!list.find(m => m.title === movie.title)){
         list.push(movie);
         localStorage.setItem("watchlist", JSON.stringify(list));
-        alert("Added to Watchlist ❤️");
+        alert("Added ❤️");
     } else {
         alert("Already saved!");
     }
 }
 
-// 📂 SHOW WATCHLIST
 function showWatchlist(){
     let list = JSON.parse(localStorage.getItem("watchlist")) || [];
     display(list);
