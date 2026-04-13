@@ -12,17 +12,14 @@ body {
 }
 
 header {
-    display:flex;
-    justify-content:space-between;
-    padding:20px 40px;
+    text-align:center;
+    padding:20px;
     font-size:28px;
-    font-weight:bold;
     color:#c084fc;
 }
 
 .search-bar {
     text-align:center;
-    margin-top:20px;
 }
 
 .search-bar input {
@@ -35,12 +32,11 @@ header {
 }
 
 .search-bar button {
-    padding:12px 18px;
-    border:none;
+    padding:12px;
     background:#7b2ff7;
+    border:none;
     color:white;
     border-radius:20px;
-    cursor:pointer;
 }
 
 .filters {
@@ -50,7 +46,7 @@ header {
 
 .filters button {
     margin:5px;
-    padding:10px 15px;
+    padding:10px;
     background:#2a004d;
     border:none;
     color:white;
@@ -60,16 +56,21 @@ header {
 
 .results {
     display:grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px,1fr));
+    grid-template-columns: repeat(auto-fill,minmax(200px,1fr));
     gap:20px;
-    padding:30px;
+    padding:20px;
 }
 
 .card {
     background:#1e0033;
     border-radius:12px;
     overflow:hidden;
+    cursor:pointer;
     transition:0.3s;
+}
+
+.card:hover {
+    transform:scale(1.05);
 }
 
 .card img {
@@ -78,22 +79,8 @@ header {
     object-fit:cover;
 }
 
-.card:hover {
-    transform:scale(1.05);
-}
-
 .card-content {
     padding:10px;
-}
-
-.card h3 {
-    color:#c084fc;
-    font-size:16px;
-}
-
-.card p {
-    font-size:12px;
-    color:#ccc;
 }
 
 button {
@@ -103,34 +90,28 @@ button {
     border-radius:8px;
     color:white;
     cursor:pointer;
-    margin-top:5px;
 }
 
-#chatBox {
+/* MODAL */
+#movieModal {
+    display:none;
     position:fixed;
-    bottom:80px;
-    right:20px;
-    width:260px;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.8);
+    justify-content:center;
+    align-items:center;
+}
+
+.modal-box {
     background:#140026;
-    padding:10px;
-    border-radius:10px;
-}
-
-#chatInput {
-    position:fixed;
-    bottom:20px;
-    right:20px;
-    width:200px;
-    padding:10px;
-    background:#1a1a1a;
-    color:white;
-    border:none;
-}
-
-#chatBtn {
-    position:fixed;
-    bottom:20px;
-    right:230px;
+    padding:20px;
+    border-radius:12px;
+    width:400px;
+    max-height:80%;
+    overflow:auto;
 }
 </style>
 </head>
@@ -155,9 +136,15 @@ button {
 
 <div id="results" class="results"></div>
 
-<div id="chatBox"></div>
-<input id="chatInput" placeholder="Ask something...">
-<button id="chatBtn" onclick="chat()">Send</button>
+<!-- 🎬 MODAL -->
+<div id="movieModal">
+    <div class="modal-box">
+        <h2 id="modalTitle"></h2>
+        <p id="modalOverview"></p>
+        <p id="modalRating"></p>
+        <button onclick="closeModal()">Close</button>
+    </div>
+</div>
 
 <script>
 
@@ -166,13 +153,13 @@ const TMDB_API_KEY = "6701680a60181e103f2b432a7e39663c";
 
 let currentMovies = [];
 
-// 🎬 GET POSTER
+// 🎬 POSTER
 async function getPoster(title){
     try{
         let res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}`);
         let data = await res.json();
 
-        if(data.results && data.results.length > 0 && data.results[0].poster_path){
+        if(data.results.length > 0){
             return "https://image.tmdb.org/t/p/w500" + data.results[0].poster_path;
         }
     } catch(e){}
@@ -180,7 +167,7 @@ async function getPoster(title){
     return "https://dummyimage.com/300x450/1e0033/c084fc&text=FilmGenie";
 }
 
-// 🔍 CHECK IF SAVED
+// ❤️ CHECK SAVED
 function isSaved(title){
     let list = JSON.parse(localStorage.getItem("watchlist")) || [];
     return list.some(m => m.title === title);
@@ -190,28 +177,20 @@ function isSaved(title){
 async function display(data){
     let div = document.getElementById("results");
     div.innerHTML = "";
-
-    if(!data || data.length === 0){
-        div.innerHTML = "<p>No movies found</p>";
-        return;
-    }
-
     currentMovies = data;
 
-    for(let i = 0; i < data.length; i++){
-
+    for(let i=0;i<data.length;i++){
         let m = data[i];
         let poster = await getPoster(m.title);
 
         div.innerHTML += `
-        <div class="card">
+        <div class="card" onclick="showDetails(${i})">
             <img src="${poster}">
             <div class="card-content">
                 <h3>${m.title}</h3>
-                <p>${m.overview ? m.overview.substring(0,80) + "..." : ""}</p>
                 <p>⭐ ${m.vote_average || "N/A"}</p>
 
-                <button onclick="toggleWatchlist(${i})">
+                <button onclick="event.stopPropagation(); toggleWatchlist(${i})">
                     ${isSaved(m.title) ? "❌ Remove" : "❤️ Save"}
                 </button>
             </div>
@@ -234,10 +213,26 @@ function toggleWatchlist(index){
     display(currentMovies);
 }
 
-// 📂 SHOW WATCHLIST
+// 📂 WATCHLIST
 function showWatchlist(){
     let list = JSON.parse(localStorage.getItem("watchlist")) || [];
     display(list);
+}
+
+// 🎬 SHOW DETAILS
+function showDetails(index){
+    let m = currentMovies[index];
+
+    document.getElementById("modalTitle").innerText = m.title;
+    document.getElementById("modalOverview").innerText = m.overview || "No description";
+    document.getElementById("modalRating").innerText = "⭐ " + (m.vote_average || "N/A");
+
+    document.getElementById("movieModal").style.display = "flex";
+}
+
+// ❌ CLOSE MODAL
+function closeModal(){
+    document.getElementById("movieModal").style.display = "none";
 }
 
 // 🔍 SEARCH
@@ -257,18 +252,6 @@ async function mood(type){
 async function surprise(){
     let res = await fetch(API + "/recommend?q=random");
     display(await res.json());
-}
-
-// 🤖 CHAT
-async function chat(){
-    let input = document.getElementById("chatInput").value;
-
-    let res = await fetch(API + "/recommend?q=" + input);
-    let data = await res.json();
-
-    document.getElementById("chatBox").innerHTML =
-    "<b>You:</b> " + input + "<br><b>FilmGenie:</b> " +
-    (data.length ? data.map(m => m.title).join(", ") : "No suggestions");
 }
 
 </script>
