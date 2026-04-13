@@ -19,6 +19,7 @@ def home():
 # -------------------------------
 # SCENE / TEXT BASED RECOMMENDATION
 # -------------------------------
+
 @app.route("/recommend")
 def recommend():
     query = request.args.get("q", "").lower()
@@ -26,10 +27,13 @@ def recommend():
     if not query:
         return jsonify([])
 
-    results = movies[movies["overview"].str.lower().str.contains(query, na=False)]
-    results = results.head(10)
+    results = movies[
+        (movies["overview"].str.lower().str.contains(query, na=False)) |
+        (movies["genres"].str.lower().str.contains(query, na=False)) |
+        (movies["keywords"].str.lower().str.contains(query, na=False))
+    ]
 
-    return jsonify(results.to_dict(orient="records"))
+    return jsonify(results.head(10).to_dict(orient="records"))
 
 # -------------------------------
 # MOOD BASED RECOMMENDATION
