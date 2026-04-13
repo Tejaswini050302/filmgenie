@@ -42,19 +42,22 @@ def recommend():
 def mood():
     mood = request.args.get("mood", "").lower()
 
-    if "happy" in mood:
-        keywords = "fun comedy adventure"
-    elif "sad" in mood:
-        keywords = "emotional drama"
-    elif "romantic" in mood:
-        keywords = "love romance"
+    if mood == "happy":
+        keywords = ["comedy", "fun", "family"]
+    elif mood == "sad":
+        keywords = ["drama", "emotional"]
+    elif mood == "romantic":
+        keywords = ["romance", "love"]
     else:
-        keywords = "action thriller"
+        keywords = ["action", "thriller"]
 
-    results = movies[movies["overview"].str.lower().str.contains(keywords, na=False)]
-    results = results.head(10)
+    results = movies[
+        movies["genres"].str.lower().apply(
+            lambda x: any(word in x for word in keywords)
+        )
+    ]
 
-    return jsonify(results.to_dict(orient="records"))
+    return jsonify(results.head(10).to_dict(orient="records"))
 
 # -------------------------------
 # SURPRISE FEATURE
