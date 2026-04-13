@@ -92,24 +92,25 @@ button {
     cursor:pointer;
 }
 
-/* MODAL */
-#movieModal {
+/* MODALS */
+#movieModal, #quizModal {
     display:none;
     position:fixed;
     top:0;
     left:0;
     width:100%;
     height:100%;
-    background:rgba(0,0,0,0.8);
+    background:rgba(0,0,0,0.85);
     justify-content:center;
     align-items:center;
+    z-index:999;
 }
 
 .modal-box {
     background:#140026;
     padding:20px;
     border-radius:12px;
-    width:400px;
+    width:350px;
     max-height:80%;
     overflow:auto;
 }
@@ -132,11 +133,12 @@ button {
     <button onclick="mood('action')">🔥 Action</button>
     <button onclick="surprise()">🎲 Surprise</button>
     <button onclick="showWatchlist()">❤️ My Watchlist</button>
+    <button onclick="openQuiz()">🧠 Quiz</button>
 </div>
 
 <div id="results" class="results"></div>
 
-<!-- 🎬 MODAL -->
+<!-- 🎬 MOVIE MODAL -->
 <div id="movieModal">
     <div class="modal-box">
         <h2 id="modalTitle"></h2>
@@ -146,24 +148,50 @@ button {
     </div>
 </div>
 
+<!-- 🧠 QUIZ MODAL -->
+<div id="quizModal">
+    <div class="modal-box">
+        <h2>Personality Quiz 🧠</h2>
+
+        <p>1. Pick your vibe:</p>
+        <button onclick="addScore(2)">Calm</button>
+        <button onclick="addScore(5)">Fun</button>
+        <button onclick="addScore(8)">Intense</button>
+
+        <p>2. Weekend plan:</p>
+        <button onclick="addScore(2)">Netflix</button>
+        <button onclick="addScore(5)">Hangout</button>
+        <button onclick="addScore(8)">Adventure</button>
+
+        <p>3. Favorite genre:</p>
+        <button onclick="addScore(2)">Romance</button>
+        <button onclick="addScore(5)">Comedy</button>
+        <button onclick="addScore(8)">Action</button>
+
+        <br><br>
+
+        <button onclick="submitQuiz()">Get Movies 🎬</button>
+        <button onclick="closeQuiz()">Close</button>
+    </div>
+</div>
+
 <script>
 
 const API = "https://filmgenie-fr1z.onrender.com";
 const TMDB_API_KEY = "6701680a60181e103f2b432a7e39663c";
 
 let currentMovies = [];
+let quizScore = 0;
 
 // 🎬 POSTER
 async function getPoster(title){
     try{
         let res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}`);
         let data = await res.json();
-
         if(data.results.length > 0){
             return "https://image.tmdb.org/t/p/w500" + data.results[0].poster_path;
         }
-    } catch(e){}
-
+    }catch(e){}
     return "https://dummyimage.com/300x450/1e0033/c084fc&text=FilmGenie";
 }
 
@@ -198,7 +226,7 @@ async function display(data){
     }
 }
 
-// ❤️ TOGGLE WATCHLIST
+// ❤️ WATCHLIST TOGGLE
 function toggleWatchlist(index){
     let movie = currentMovies[index];
     let list = JSON.parse(localStorage.getItem("watchlist")) || [];
@@ -219,7 +247,7 @@ function showWatchlist(){
     display(list);
 }
 
-// 🎬 SHOW DETAILS
+// 🎬 DETAILS MODAL
 function showDetails(index){
     let m = currentMovies[index];
 
@@ -230,9 +258,30 @@ function showDetails(index){
     document.getElementById("movieModal").style.display = "flex";
 }
 
-// ❌ CLOSE MODAL
 function closeModal(){
     document.getElementById("movieModal").style.display = "none";
+}
+
+// 🧠 QUIZ
+function openQuiz(){
+    quizScore = 0;
+    document.getElementById("quizModal").style.display = "flex";
+}
+
+function closeQuiz(){
+    document.getElementById("quizModal").style.display = "none";
+}
+
+function addScore(val){
+    quizScore += val;
+}
+
+async function submitQuiz(){
+    let res = await fetch(API + "/personality?score=" + quizScore);
+    let data = await res.json();
+
+    closeQuiz();
+    display(data);
 }
 
 // 🔍 SEARCH
