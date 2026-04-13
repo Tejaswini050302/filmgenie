@@ -86,9 +86,10 @@ button {
     cursor:pointer;
 }
 
-/* Selected option */
+/* Selected button */
 .selected {
     background:#c084fc !important;
+    transform:scale(1.05);
 }
 
 /* MODALS */
@@ -110,6 +111,14 @@ button {
     border-radius:12px;
     width:360px;
 }
+
+/* Personality result */
+#personalityResult {
+    text-align:center;
+    margin-top:10px;
+    font-size:18px;
+    color:#c084fc;
+}
 </style>
 </head>
 
@@ -128,7 +137,6 @@ button {
     <button onclick="mood('romantic')">❤️ Romantic</button>
     <button onclick="mood('action')">🔥 Action</button>
     <button onclick="surprise()">🎲 Surprise</button>
-    <button onclick="showWatchlist()">❤️ Watchlist</button>
     <button onclick="openQuiz()">🧠 Quiz</button>
 </div>
 
@@ -166,19 +174,21 @@ button {
 <button onclick="selectOption(3,8,this)">Action</button>
 
 <p>4. Choose a setting</p>
-<button onclick="selectOption(4,2,this)">City life</button>
+<button onclick="selectOption(4,2,this)">City</button>
 <button onclick="selectOption(4,5,this)">Beach</button>
-<button onclick="selectOption(4,8,this)">War zone</button>
+<button onclick="selectOption(4,8,this)">War</button>
 
-<p>5. Pick a character type</p>
+<p>5. Character?</p>
 <button onclick="selectOption(5,2,this)">Lover</button>
-<button onclick="selectOption(5,5,this)">Funny friend</button>
+<button onclick="selectOption(5,5,this)">Funny</button>
 <button onclick="selectOption(5,8,this)">Hero</button>
 
 <br><br>
 
 <button onclick="submitQuiz()">Get Movies 🎬</button>
 <button onclick="closeQuiz()">Close</button>
+
+<div id="personalityResult"></div>
 
 </div>
 </div>
@@ -234,23 +244,36 @@ function showDetails(i){
 }
 function closeModal(){ movieModal.style.display="none"; }
 
-// QUIZ LOGIC
+// QUIZ SELECT
 function selectOption(q,score,btn){
     answers[q]=score;
+
     let btns=btn.parentElement.querySelectorAll("button");
     btns.forEach(b=>b.classList.remove("selected"));
+
     btn.classList.add("selected");
 }
 
+// QUIZ OPEN
 function openQuiz(){
     answers={};
+    document.getElementById("personalityResult").innerText="";
     quizModal.style.display="flex";
 }
 
+// QUIZ CLOSE
 function closeQuiz(){
     quizModal.style.display="none";
 }
 
+// PERSONALITY TYPE
+function getPersonality(score){
+    if(score<=15) return "🎧 Chill Viewer";
+    if(score<=25) return "😄 Fun Explorer";
+    return "🔥 Action Lover";
+}
+
+// SUBMIT
 async function submitQuiz(){
     if(Object.keys(answers).length<5){
         alert("Answer all questions!");
@@ -259,10 +282,16 @@ async function submitQuiz(){
 
     let total=Object.values(answers).reduce((a,b)=>a+b,0);
 
-    let res=await fetch(API+"/personality?score="+total);
-    display(await res.json());
+    let type=getPersonality(total);
+    document.getElementById("personalityResult").innerText="You are: "+type;
 
-    closeQuiz();
+    let res=await fetch(API+"/personality?score="+total);
+    let data=await res.json();
+
+    setTimeout(()=>{
+        closeQuiz();
+        display(data);
+    },1500);
 }
 
 // SEARCH
