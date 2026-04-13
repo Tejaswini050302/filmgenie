@@ -1,103 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>FilmGenie 🎬</title>
-
-<style>
-body {
-    margin:0;
-    font-family:Segoe UI;
-    background: linear-gradient(135deg,#0a0014,#1a0033,#2d0059);
-    color:white;
-}
-
-header {
-    text-align:center;
-    padding:20px;
-    font-size:28px;
-    color:#c084fc;
-}
-
-.box {
-    background:#140026;
-    padding:20px;
-    margin:20px auto;
-    width:320px;
-    border-radius:12px;
-    text-align:center;
-}
-
-input {
-    padding:10px;
-    width:90%;
-    margin:10px;
-    background:#1a1a1a;
-    color:white;
-    border:none;
-}
-
-button {
-    padding:10px;
-    background:#7b2ff7;
-    color:white;
-    border:none;
-    cursor:pointer;
-}
-
-.results {
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-}
-
-.card {
-    background:#1e0033;
-    margin:10px;
-    padding:10px;
-    width:200px;
-}
-
-#chatBox {
-    position:fixed;
-    bottom:80px;
-    right:20px;
-    width:250px;
-    background:#140026;
-    padding:10px;
-}
-</style>
-</head>
-
-<body>
-
-<header>🎬 FilmGenie</header>
-
-<div class="box">
-<input id="sceneInput" placeholder="Describe scene">
-<button onclick="scene()">Scene</button>
-</div>
-
-<div class="box">
-<input id="moodInput" placeholder="Mood">
-<button onclick="mood()">Mood</button>
-</div>
-
-<div class="box">
-<input id="scoreInput" placeholder="Score">
-<button onclick="personality()">Personality</button>
-</div>
-
-<div class="box">
-<button onclick="surprise()">Surprise</button>
-</div>
-
-<div id="results" class="results"></div>
-
-<!-- Chatbot -->
-<div id="chatBox"></div>
-<input id="chatInput" style="position:fixed;bottom:20px;right:20px;">
-<button onclick="chat()" style="position:fixed;bottom:20px;right:200px;">Send</button>
-
 <script>
 
 const API = "https://filmgenie-fr1z.onrender.com";
@@ -108,45 +8,46 @@ function display(data){
     data.forEach(m=>{
         div.innerHTML+=`<div class="card">
         <h3>${m.title}</h3>
-        <p>${m.reason}</p>
-        <p>${m.score.toFixed(2)}</p>
+        <p>${m.overview || ""}</p>
         </div>`;
     });
 }
 
+// SCENE (uses /recommend)
 async function scene(){
     let val=document.getElementById("sceneInput").value;
-    let res=await fetch(API+"/scene",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({input:val})});
+    let res=await fetch(`${API}/recommend?q=${val}`);
     display(await res.json());
 }
 
+// MOOD
 async function mood(){
     let val=document.getElementById("moodInput").value;
-    let res=await fetch(API+"/mood",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:val})});
+    let res=await fetch(`${API}/mood?mood=${val}`);
     display(await res.json());
 }
 
+// PERSONALITY (temporary uses recommend)
 async function personality(){
     let val=document.getElementById("scoreInput").value;
-    let res=await fetch(API+"/personality",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({score:parseInt(val)})});
+    let res=await fetch(`${API}/recommend?q=${val}`);
     display(await res.json());
 }
 
+// SURPRISE
 async function surprise(){
-    let res=await fetch(API+"/surprise");
+    let res=await fetch(`${API}/surprise`);
     display(await res.json());
 }
 
+// CHATBOT
 async function chat(){
     let input=document.getElementById("chatInput").value;
-    let res=await fetch(API+"/scene",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({input})});
+    let res=await fetch(`${API}/chat?msg=${input}`);
     let data=await res.json();
 
     document.getElementById("chatBox").innerHTML=
-    "<b>You:</b>"+input+"<br><b>FilmGenie:</b>"+data.map(m=>m.title).join(", ");
+    "<b>You:</b> "+input+"<br><b>FilmGenie:</b> "+data.reply;
 }
 
 </script>
-
-</body>
-</html>
