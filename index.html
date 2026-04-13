@@ -176,6 +176,7 @@ header {
 
 const API = "https://filmgenie-fr1z.onrender.com";
 
+let currentMovies = [];
 // 🎬 DISPLAY MOVIES
 const TMDB_API_KEY = "6701680a60181e103f2b432a7e39663c";
 
@@ -203,24 +204,26 @@ async function display(data){
         return;
     }
 
-    for (let m of data){
+    currentMovies = data; // store movies
 
-        let poster = await getPoster(m.title);
+    data.forEach((m, i) => {
+
+        let poster = "https://dummyimage.com/300x450/1e0033/c084fc&text=FilmGenie";
 
         div.innerHTML += `
-<div class="card">
-    <img src="${poster}">
-    <div class="card-content">
-        <h3>${m.title}</h3>
-        <p>${m.overview ? m.overview.substring(0,80) + "..." : ""}</p>
-        <p>⭐ ${m.vote_average || "N/A"}</p>
+        <div class="card">
+            <img src="${poster}">
+            <div class="card-content">
+                <h3>${m.title}</h3>
+                <p>${m.overview ? m.overview.substring(0,80) + "..." : ""}</p>
+                <p>⭐ ${m.vote_average || "N/A"}</p>
 
-        <button onclick='addToWatchlist(${JSON.stringify(m)})'>
-            ❤️ Save
-        </button>
-    </div>
-</div>`;
-    }
+                <button onclick="addToWatchlist(${i})">
+                    ❤️ Save
+                </button>
+            </div>
+        </div>`;
+    });
 }
 
 // 🔍 SEARCH
@@ -253,8 +256,11 @@ async function chat(){
     "<b>You:</b> " + input + "<br><b>FilmGenie:</b> " +
     (data.length ? data.map(m => m.title).join(", ") : "No suggestions");
 }
-    // ADD MOVIE TO WATCHLIST
-function addToWatchlist(movie){
+
+    // ❤️ ADD TO WATCHLIST
+function addToWatchlist(index){
+    let movie = currentMovies[index];
+
     let list = JSON.parse(localStorage.getItem("watchlist")) || [];
 
     if(!list.find(m => m.title === movie.title)){
@@ -262,11 +268,11 @@ function addToWatchlist(movie){
         localStorage.setItem("watchlist", JSON.stringify(list));
         alert("Added to Watchlist ❤️");
     } else {
-        alert("Already in Watchlist");
+        alert("Already saved!");
     }
 }
 
-// SHOW WATCHLIST
+// 📂 SHOW WATCHLIST
 function showWatchlist(){
     let list = JSON.parse(localStorage.getItem("watchlist")) || [];
     display(list);
