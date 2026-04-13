@@ -88,6 +88,23 @@ def mood():
 def surprise():
     return jsonify(movies.sample(10).to_dict(orient="records"))
 
+#--------------------------------
+# PERSONALITY
+#-------------------------------
+
+@app.route("/personality")
+def personality():
+    score = int(request.args.get("score", 5))
+
+    if score <= 3:
+        result = movies[movies["content"].str.contains("romance|drama", case=False, na=False)]
+    elif score <= 7:
+        result = movies[movies["content"].str.contains("comedy|family", case=False, na=False)]
+    else:
+        result = movies[movies["content"].str.contains("action|thriller|war", case=False, na=False)]
+
+    return jsonify(result.sample(min(12, len(result))).to_dict(orient="records"))
+
 # -------------------------------
 # CHATBOT
 # -------------------------------
