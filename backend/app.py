@@ -9,7 +9,7 @@ CORS(app)
 # -------------------------------
 # LOAD DATA
 # -------------------------------
-movies = pd.read_csv("data/movie.csv")
+movies = pd.read_csv("data/movies.csv")
 
 # 🔥 FIX NaN → valid JSON
 movies = movies.fillna("")
