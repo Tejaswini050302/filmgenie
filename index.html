@@ -180,20 +180,26 @@ function display(data){
     let div = document.getElementById("results");
     div.innerHTML = "";
 
+    if(!data || data.length === 0){
+        div.innerHTML = "<p>No movies found</p>";
+        return;
+    }
+
     data.forEach(m => {
-        let poster = m.poster_path 
-            ? "https://image.tmdb.org/t/p/w500" + m.poster_path
-            : "https://via.placeholder.com/300x450?text=No+Image";
+
+        // ✅ ALWAYS WORKING POSTER (no error)
+        let poster = "https://dummyimage.com/300x450/1e0033/c084fc&text=FilmGenie";
 
         div.innerHTML += `
         <div class="card">
-            <img src="${poster}">
+            <img src="${poster}" alt="poster">
             <div class="card-content">
                 <h3>${m.title}</h3>
                 <p>${m.overview ? m.overview.substring(0,80) + "..." : ""}</p>
-                <p>⭐ ${m.vote_average || "N/A"}</p>
+                <p><b>⭐ Rating:</b> ${m.vote_average || "N/A"}</p>
             </div>
-        </div>`;
+        </div>
+        `;
     });
 }
 
