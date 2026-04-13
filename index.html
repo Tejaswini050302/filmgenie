@@ -161,6 +161,7 @@ header {
     <button onclick="mood('romantic')">❤️ Romantic</button>
     <button onclick="mood('action')">🔥 Action</button>
     <button onclick="surprise()">🎲 Surprise</button>
+    <button onclick="showWatchlist()">❤️ My Watchlist</button>
 </div>
 
 <!-- RESULTS -->
@@ -207,14 +208,18 @@ async function display(data){
         let poster = await getPoster(m.title);
 
         div.innerHTML += `
-        <div class="card">
-            <img src="${poster}">
-            <div class="card-content">
-                <h3>${m.title}</h3>
-                <p>${m.overview ? m.overview.substring(0,80) + "..." : ""}</p>
-                <p>⭐ ${m.vote_average || "N/A"}</p>
-            </div>
-        </div>`;
+<div class="card">
+    <img src="${poster}">
+    <div class="card-content">
+        <h3>${m.title}</h3>
+        <p>${m.overview ? m.overview.substring(0,80) + "..." : ""}</p>
+        <p>⭐ ${m.vote_average || "N/A"}</p>
+
+        <button onclick='addToWatchlist(${JSON.stringify(m)})'>
+            ❤️ Save
+        </button>
+    </div>
+</div>`;
     }
 }
 
@@ -247,6 +252,24 @@ async function chat(){
     document.getElementById("chatBox").innerHTML =
     "<b>You:</b> " + input + "<br><b>FilmGenie:</b> " +
     (data.length ? data.map(m => m.title).join(", ") : "No suggestions");
+}
+    // ADD MOVIE TO WATCHLIST
+function addToWatchlist(movie){
+    let list = JSON.parse(localStorage.getItem("watchlist")) || [];
+
+    if(!list.find(m => m.title === movie.title)){
+        list.push(movie);
+        localStorage.setItem("watchlist", JSON.stringify(list));
+        alert("Added to Watchlist ❤️");
+    } else {
+        alert("Already in Watchlist");
+    }
+}
+
+// SHOW WATCHLIST
+function showWatchlist(){
+    let list = JSON.parse(localStorage.getItem("watchlist")) || [];
+    display(list);
 }
 
 </script>
