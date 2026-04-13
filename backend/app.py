@@ -42,16 +42,19 @@ def home():
 def recommend():
     query = request.args.get("q", "").lower()
 
+    # 🎲 TRUE RANDOM MODE
+    if query == "random":
+        return jsonify(movies.sample(12).to_dict(orient="records"))
+
     results = movies[
         movies["content"].str.lower().str.contains(query, na=False)
     ]
 
-    # 🔥 fallback (never empty)
+    # fallback if nothing found
     if results.empty:
-        return jsonify(movies.sample(10).to_dict(orient="records"))
+        return jsonify(movies.sample(12).to_dict(orient="records"))
 
-    return jsonify(results.head(10).to_dict(orient="records"))
-
+    return jsonify(results.sample(min(12, len(results))).to_dict(orient="records"))
 # -------------------------------
 # MOOD
 # -------------------------------
