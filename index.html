@@ -176,7 +176,24 @@ header {
 const API = "https://filmgenie-fr1z.onrender.com";
 
 // 🎬 DISPLAY MOVIES
-function display(data){
+const TMDB_API_KEY = "6701680a60181e103f2b432a7e39663c";
+
+// 🎬 GET POSTER
+async function getPoster(title){
+    try{
+        let res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${title}`);
+        let data = await res.json();
+
+        if(data.results && data.results.length > 0 && data.results[0].poster_path){
+            return "https://image.tmdb.org/t/p/w500" + data.results[0].poster_path;
+        }
+    } catch(e){}
+
+    return "https://dummyimage.com/300x450/1e0033/c084fc&text=FilmGenie";
+}
+
+// 🎬 DISPLAY (NEW)
+async function display(data){
     let div = document.getElementById("results");
     div.innerHTML = "";
 
@@ -185,22 +202,20 @@ function display(data){
         return;
     }
 
-    data.forEach(m => {
+    for (let m of data){
 
-        // ✅ ALWAYS WORKING POSTER (no error)
-        let poster = "https://dummyimage.com/300x450/1e0033/c084fc&text=FilmGenie";
+        let poster = await getPoster(m.title);
 
         div.innerHTML += `
         <div class="card">
-            <img src="${poster}" alt="poster">
+            <img src="${poster}">
             <div class="card-content">
                 <h3>${m.title}</h3>
                 <p>${m.overview ? m.overview.substring(0,80) + "..." : ""}</p>
-                <p><b>⭐ Rating:</b> ${m.vote_average || "N/A"}</p>
+                <p>⭐ ${m.vote_average || "N/A"}</p>
             </div>
-        </div>
-        `;
-    });
+        </div>`;
+    }
 }
 
 // 🔍 SEARCH
