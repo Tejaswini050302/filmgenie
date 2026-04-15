@@ -86,20 +86,15 @@ button {
     cursor:pointer;
 }
 
-/* Selected button */
 .selected {
     background:#c084fc !important;
-    transform:scale(1.05);
 }
 
-/* MODALS */
 #movieModal, #quizModal {
     display:none;
     position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
+    top:0;left:0;
+    width:100%;height:100%;
     background:rgba(0,0,0,0.85);
     justify-content:center;
     align-items:center;
@@ -109,15 +104,20 @@ button {
     background:#140026;
     padding:20px;
     border-radius:12px;
-    width:360px;
+    width:350px;
 }
 
-/* Personality result */
-#personalityResult {
-    text-align:center;
-    margin-top:10px;
-    font-size:18px;
-    color:#c084fc;
+/* AI Chat */
+#aiChatBox {
+    position:fixed;
+    bottom:80px;
+    right:20px;
+    width:300px;
+    height:300px;
+    overflow:auto;
+    background:#140026;
+    padding:10px;
+    border-radius:10px;
 }
 </style>
 </head>
@@ -127,17 +127,17 @@ button {
 <header>🎬 FilmGenie</header>
 
 <div class="search-bar">
-    <input id="sceneInput" placeholder="Search movies...">
-    <button onclick="scene()">Search</button>
+<input id="sceneInput" placeholder="Search movies...">
+<button onclick="scene()">Search</button>
 </div>
 
 <div class="filters">
-    <button onclick="mood('happy')">😊 Happy</button>
-    <button onclick="mood('sad')">😢 Sad</button>
-    <button onclick="mood('romantic')">❤️ Romantic</button>
-    <button onclick="mood('action')">🔥 Action</button>
-    <button onclick="surprise()">🎲 Surprise</button>
-    <button onclick="openQuiz()">🧠 Quiz</button>
+<button onclick="mood('happy')">😊 Happy</button>
+<button onclick="mood('sad')">😢 Sad</button>
+<button onclick="mood('romantic')">❤️ Romantic</button>
+<button onclick="mood('action')">🔥 Action</button>
+<button onclick="surprise()">🎲 Surprise</button>
+<button onclick="openQuiz()">🧠 Quiz</button>
 </div>
 
 <div id="results" class="results"></div>
@@ -152,7 +152,7 @@ button {
 </div>
 </div>
 
-<!-- QUIZ MODAL -->
+<!-- QUIZ -->
 <div id="quizModal">
 <div class="modal-box">
 
@@ -164,16 +164,16 @@ button {
 <button onclick="selectOption(1,8,this)">Intense</button>
 
 <p>2. Weekend?</p>
-<button onclick="selectOption(2,2,this)">Stay home</button>
+<button onclick="selectOption(2,2,this)">Home</button>
 <button onclick="selectOption(2,5,this)">Friends</button>
 <button onclick="selectOption(2,8,this)">Adventure</button>
 
-<p>3. Favorite genre?</p>
+<p>3. Genre?</p>
 <button onclick="selectOption(3,2,this)">Romance</button>
 <button onclick="selectOption(3,5,this)">Comedy</button>
 <button onclick="selectOption(3,8,this)">Action</button>
 
-<p>4. Choose a setting</p>
+<p>4. Setting?</p>
 <button onclick="selectOption(4,2,this)">City</button>
 <button onclick="selectOption(4,5,this)">Beach</button>
 <button onclick="selectOption(4,8,this)">War</button>
@@ -184,7 +184,6 @@ button {
 <button onclick="selectOption(5,8,this)">Hero</button>
 
 <br><br>
-
 <button onclick="submitQuiz()">Get Movies 🎬</button>
 <button onclick="closeQuiz()">Close</button>
 
@@ -193,23 +192,32 @@ button {
 </div>
 </div>
 
+<!-- AI CHAT -->
+<div id="aiChatBox"></div>
+
+<input id="aiInput" placeholder="Ask FilmGenie AI..."
+style="position:fixed;bottom:20px;right:20px;width:200px;padding:10px;background:#1a1a1a;color:white;border:none;">
+
+<button onclick="askAI()" 
+style="position:fixed;bottom:20px;right:230px;background:#7b2ff7;border:none;color:white;padding:10px;">
+Send
+</button>
+
 <script>
 
-const API = "https://filmgenie-fr1z.onrender.com";
-const TMDB_API_KEY = "6701680a60181e103f2b432a7e39663c";
+const API="https://filmgenie-fr1z.onrender.com";
+const TMDB_API_KEY="6701680a60181e103f2b432a7e39663c";
 
-let currentMovies = [];
-let answers = {};
+let currentMovies=[];
+let answers={};
 
 // POSTER
 async function getPoster(title){
-    try{
-        let res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}`);
-        let data = await res.json();
-        if(data.results.length>0){
-            return "https://image.tmdb.org/t/p/w500"+data.results[0].poster_path;
-        }
-    }catch(e){}
+    let res=await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}`);
+    let data=await res.json();
+    if(data.results.length>0){
+        return "https://image.tmdb.org/t/p/w500"+data.results[0].poster_path;
+    }
     return "https://dummyimage.com/300x450/1e0033/c084fc&text=FilmGenie";
 }
 
@@ -242,56 +250,41 @@ function showDetails(i){
     modalRating.innerText="⭐ "+(m.vote_average||"N/A");
     movieModal.style.display="flex";
 }
-function closeModal(){ movieModal.style.display="none"; }
+function closeModal(){movieModal.style.display="none";}
 
-// QUIZ SELECT
-function selectOption(q,score,btn){
-    answers[q]=score;
-
+// QUIZ
+function selectOption(q,s,btn){
+    answers[q]=s;
     let btns=btn.parentElement.querySelectorAll("button");
     btns.forEach(b=>b.classList.remove("selected"));
-
     btn.classList.add("selected");
 }
 
-// QUIZ OPEN
 function openQuiz(){
     answers={};
-    document.getElementById("personalityResult").innerText="";
+    personalityResult.innerText="";
     quizModal.style.display="flex";
 }
+function closeQuiz(){quizModal.style.display="none";}
 
-// QUIZ CLOSE
-function closeQuiz(){
-    quizModal.style.display="none";
-}
-
-// PERSONALITY TYPE
-function getPersonality(score){
-    if(score<=15) return "🎧 Chill Viewer";
-    if(score<=25) return "😄 Fun Explorer";
+function getType(score){
+    if(score<=15)return "🎧 Chill Viewer";
+    if(score<=25)return "😄 Fun Explorer";
     return "🔥 Action Lover";
 }
 
-// SUBMIT
 async function submitQuiz(){
     if(Object.keys(answers).length<5){
         alert("Answer all questions!");
         return;
     }
-
     let total=Object.values(answers).reduce((a,b)=>a+b,0);
-
-    let type=getPersonality(total);
-    document.getElementById("personalityResult").innerText="You are: "+type;
+    personalityResult.innerText="You are: "+getType(total);
 
     let res=await fetch(API+"/personality?score="+total);
     let data=await res.json();
 
-    setTimeout(()=>{
-        closeQuiz();
-        display(data);
-    },1500);
+    setTimeout(()=>{closeQuiz();display(data);},1500);
 }
 
 // SEARCH
@@ -313,6 +306,49 @@ async function surprise(){
     display(await res.json());
 }
 
+// 🤖 AI CHAT
+function addMsg(s,t){
+    aiChatBox.innerHTML+=`<p><b>${s}:</b> ${t}</p>`;
+    aiChatBox.scrollTop=aiChatBox.scrollHeight;
+}
+
+async function askAI(){
+    let input=aiInput.value.toLowerCase();
+    addMsg("You",input);
+
+    if(input.includes("trending")){
+        let r=await fetch(`https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_API_KEY}`);
+        let d=await r.json();
+        addMsg("AI","🔥 Trending movies");
+        display(d.results);return;
+    }
+
+    let genres={action:28,comedy:35,romance:10749,drama:18};
+    for(let g in genres){
+        if(input.includes(g)){
+            let r=await fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genres[g]}`);
+            let d=await r.json();
+            addMsg("AI","🎬 "+g+" movies");
+            display(d.results);return;
+        }
+    }
+
+    if(input.includes("like")){
+        let movie=input.split("like")[1].trim();
+        let r1=await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${movie}`);
+        let d1=await r1.json();
+        let id=d1.results[0]?.id;
+        if(!id){addMsg("AI","Not found");return;}
+        let r2=await fetch(`https://api.themoviedb.org/3/movie/${id}/similar?api_key=${TMDB_API_KEY}`);
+        let d2=await r2.json();
+        display(d2.results);return;
+    }
+
+    // default
+    let r=await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${input}`);
+    let d=await r.json();
+    display(d.results);
+}
 </script>
 
 </body>
