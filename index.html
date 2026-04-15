@@ -7,94 +7,128 @@
 body {
     margin:0;
     font-family:'Segoe UI',sans-serif;
-    background:linear-gradient(135deg,#0a0014,#140026,#1f003d);
+    background:#0b0014;
     color:white;
 }
 
+/* HEADER */
 header {
-    text-align:center;
-    padding:20px;
+    padding:20px 40px;
     font-size:28px;
+    font-weight:bold;
     color:#c084fc;
 }
 
-.search-bar { text-align:center; }
+/* SEARCH */
+.search-bar {
+    text-align:center;
+    margin:20px;
+}
 
 .search-bar input {
-    width:300px;
-    padding:12px;
-    border-radius:20px;
+    width:350px;
+    padding:14px;
+    border-radius:30px;
     border:none;
     background:#1a1a1a;
     color:white;
 }
 
 .search-bar button {
-    padding:12px;
+    padding:12px 16px;
+    border:none;
     background:#7b2ff7;
-    border:none;
-    color:white;
-    border-radius:20px;
-}
-
-.filters {
-    text-align:center;
-    margin:20px;
-}
-
-.filters button {
-    margin:5px;
-    padding:10px;
-    background:#2a004d;
-    border:none;
     color:white;
     border-radius:20px;
     cursor:pointer;
 }
 
+/* FILTERS */
+.filters {
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.filters button {
+    margin:5px;
+    padding:10px 15px;
+    border:none;
+    border-radius:20px;
+    background:#2a004d;
+    color:white;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.filters button:hover {
+    background:#7b2ff7;
+}
+
+/* GRID */
 .results {
     display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+    grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
     gap:20px;
     padding:20px;
 }
 
+/* CARD */
 .card {
-    background:#1e0033;
+    position:relative;
     border-radius:12px;
     overflow:hidden;
     cursor:pointer;
     transition:0.3s;
 }
 
-.card:hover { transform:scale(1.05); }
-
 .card img {
     width:100%;
-    height:300px;
+    height:270px;
     object-fit:cover;
 }
 
-.card-content { padding:10px; }
+.card:hover {
+    transform:scale(1.08);
+}
 
-button {
-    background:#7b2ff7;
+/* OVERLAY */
+.overlay {
+    position:absolute;
+    bottom:0;
+    width:100%;
+    background:linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    padding:10px;
+    opacity:0;
+    transition:0.3s;
+}
+
+.card:hover .overlay {
+    opacity:1;
+}
+
+.overlay h3 {
+    font-size:14px;
+    margin:5px 0;
+}
+
+.overlay button {
+    margin:3px;
+    padding:5px 8px;
+    font-size:12px;
     border:none;
-    padding:8px;
-    border-radius:8px;
+    border-radius:5px;
+    background:#7b2ff7;
     color:white;
     cursor:pointer;
 }
 
-.selected { background:#c084fc !important; }
-
-/* MODALS */
-#movieModal, #quizModal {
+/* MODAL */
+#movieModal {
     display:none;
     position:fixed;
-    top:0; left:0;
-    width:100%; height:100%;
-    background:rgba(0,0,0,0.85);
+    top:0;left:0;
+    width:100%;height:100%;
+    background:rgba(0,0,0,0.9);
     justify-content:center;
     align-items:center;
 }
@@ -103,10 +137,10 @@ button {
     background:#140026;
     padding:20px;
     border-radius:12px;
-    width:350px;
+    width:400px;
 }
 
-/* AI CHAT */
+/* CHAT */
 #aiChatBox {
     position:fixed;
     bottom:80px;
@@ -128,8 +162,8 @@ button {
 <div class="search-bar">
 <input id="sceneInput" placeholder="Search movies...">
 <button onclick="scene()">Search</button>
-<button onclick="mlRecommend()">🎯 Similar AI</button>
-<button onclick="smart()">🧠 Smart AI</button>
+<button onclick="mlRecommend()">🎯 Similar</button>
+<button onclick="smart()">🧠 Smart</button>
 </div>
 
 <div class="filters">
@@ -139,12 +173,11 @@ button {
 <button onclick="mood('action')">🔥 Action</button>
 <button onclick="surprise()">🎲 Surprise</button>
 <button onclick="showWatchlist()">❤️ Watchlist</button>
-<button onclick="openQuiz()">🧠 Quiz</button>
 </div>
 
 <div id="results" class="results"></div>
 
-<!-- MOVIE MODAL -->
+<!-- MODAL -->
 <div id="movieModal">
 <div class="modal-box">
 <h2 id="modalTitle"></h2>
@@ -154,50 +187,10 @@ button {
 </div>
 </div>
 
-<!-- QUIZ -->
-<div id="quizModal">
-<div class="modal-box">
-
-<h2>Personality Quiz 🧠</h2>
-
-<p>1. Your vibe?</p>
-<button onclick="selectOption(1,2,this)">Calm</button>
-<button onclick="selectOption(1,5,this)">Fun</button>
-<button onclick="selectOption(1,8,this)">Intense</button>
-
-<p>2. Weekend?</p>
-<button onclick="selectOption(2,2,this)">Home</button>
-<button onclick="selectOption(2,5,this)">Friends</button>
-<button onclick="selectOption(2,8,this)">Adventure</button>
-
-<p>3. Genre?</p>
-<button onclick="selectOption(3,2,this)">Romance</button>
-<button onclick="selectOption(3,5,this)">Comedy</button>
-<button onclick="selectOption(3,8,this)">Action</button>
-
-<p>4. Setting?</p>
-<button onclick="selectOption(4,2,this)">City</button>
-<button onclick="selectOption(4,5,this)">Beach</button>
-<button onclick="selectOption(4,8,this)">War</button>
-
-<p>5. Character?</p>
-<button onclick="selectOption(5,2,this)">Lover</button>
-<button onclick="selectOption(5,5,this)">Funny</button>
-<button onclick="selectOption(5,8,this)">Hero</button>
-
-<br><br>
-<button onclick="submitQuiz()">Get Movies 🎬</button>
-<button onclick="closeQuiz()">Close</button>
-
-<div id="personalityResult"></div>
-
-</div>
-</div>
-
-<!-- AI CHAT -->
+<!-- CHAT -->
 <div id="aiChatBox"></div>
 
-<input id="aiInput" placeholder="Ask FilmGenie AI..."
+<input id="aiInput" placeholder="Ask AI..."
 style="position:fixed;bottom:20px;right:20px;width:200px;padding:10px;background:#1a1a1a;color:white;border:none;">
 
 <button onclick="askAI()" 
@@ -210,23 +203,20 @@ Send
 const API="https://filmgenie-fr1z.onrender.com";
 
 let currentMovies=[];
-let answers={};
 
-// 🔥 GET POSTER FROM TMDB
+/* POSTER */
 async function getPoster(title){
     try{
-        let res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=6701680a60181e103f2b432a7e39663c&query=${encodeURIComponent(title)}`);
-        let data = await res.json();
-
-        if(data.results && data.results.length > 0 && data.results[0].poster_path){
-            return "https://image.tmdb.org/t/p/w500" + data.results[0].poster_path;
+        let res=await fetch(`https://api.themoviedb.org/3/search/movie?api_key=6701680a60181e103f2b432a7e39663c&query=${encodeURIComponent(title)}`);
+        let data=await res.json();
+        if(data.results && data.results[0].poster_path){
+            return "https://image.tmdb.org/t/p/w500"+data.results[0].poster_path;
         }
-    }catch(e){}
-
-    return "https://dummyimage.com/300x450/1e0033/c084fc&text=No+Image";
+    }catch{}
+    return "";
 }
 
-// DISPLAY
+/* DISPLAY */
 async function display(data){
     let div=document.getElementById("results");
     div.innerHTML="";
@@ -234,24 +224,22 @@ async function display(data){
 
     for(let i=0;i<data.length;i++){
         let m=data[i];
-        let poster = await getPoster(m.title);
+        let poster=await getPoster(m.title);
 
         div.innerHTML+=`
-        <div class="card" onclick="showDetails(${i})">
-            <img src="${poster}">
-            <div class="card-content">
-                <h3>${m.title}</h3>
-                <p>⭐ ${m.vote_average||"N/A"}</p>
+        <div class="card">
+            <img src="${poster}" onclick="showDetails(${i})">
 
-                <button onclick="event.stopPropagation(); toggleWatchlist(${i})">
-                    ❤️ Save
-                </button>
+            <div class="overlay">
+                <h3>${m.title}</h3>
+                <button onclick="toggleWatchlist(${i})">❤️</button>
+                <button onclick="showDetails(${i})">ℹ️</button>
             </div>
         </div>`;
     }
 }
 
-// DETAILS
+/* MODAL */
 function showDetails(i){
     let m=currentMovies[i];
     modalTitle.innerText=m.title;
@@ -261,7 +249,7 @@ function showDetails(i){
 }
 function closeModal(){movieModal.style.display="none";}
 
-// WATCHLIST
+/* WATCHLIST */
 function toggleWatchlist(i){
     let movie=currentMovies[i];
     let list=JSON.parse(localStorage.getItem("watchlist"))||[];
@@ -277,98 +265,43 @@ function toggleWatchlist(i){
     }
 
     localStorage.setItem("watchlist",JSON.stringify(list));
-
-    fetch(API+"/track?type=movie&value="+movie.title);
 }
 
+/* WATCHLIST VIEW */
 function showWatchlist(){
     let list=JSON.parse(localStorage.getItem("watchlist"))||[];
-    let div=document.getElementById("results");
-    div.innerHTML="";
-
-    list.forEach((m)=>{
-        let poster = m.poster_path 
-            ? "https://image.tmdb.org/t/p/w500" + m.poster_path
-            : "";
-
-        div.innerHTML+=`
-        <div class="card">
-            <img src="${poster}">
-            <div class="card-content">
-                <h3>${m.title}</h3>
-                <button onclick="removeFromWatchlist(${m.id})">❌ Remove</button>
-            </div>
-        </div>`;
-    });
+    display(list);
 }
 
-function removeFromWatchlist(id){
-    let list=JSON.parse(localStorage.getItem("watchlist"))||[];
-    list=list.filter(m=>m.id!==id);
-    localStorage.setItem("watchlist",JSON.stringify(list));
-    showWatchlist();
-}
-
-// QUIZ
-function selectOption(q,s,btn){
-    answers[q]=s;
-    let btns=btn.parentElement.querySelectorAll("button");
-    btns.forEach(b=>b.classList.remove("selected"));
-    btn.classList.add("selected");
-}
-
-function openQuiz(){answers={};quizModal.style.display="flex";}
-function closeQuiz(){quizModal.style.display="none";}
-
-function getType(score){
-    if(score<=15)return "🎧 Chill Viewer";
-    if(score<=25)return "😄 Fun Explorer";
-    return "🔥 Action Lover";
-}
-
-async function submitQuiz(){
-    let total=Object.values(answers).reduce((a,b)=>a+b,0);
-    personalityResult.innerText="You are: "+getType(total);
-
-    let res=await fetch(API+"/personality?score="+total);
-    display(await res.json());
-}
-
-// SEARCH
+/* API CALLS */
 async function scene(){
     let val=sceneInput.value;
-    fetch(API+"/track?type=search&value="+val);
     let res=await fetch(API+"/recommend?q="+val);
     display(await res.json());
 }
 
-// MOOD
 async function mood(type){
-    fetch(API+"/track?type=mood&value="+type);
     let res=await fetch(API+"/mood?mood="+type);
     display(await res.json());
 }
 
-// SURPRISE
 async function surprise(){
     let res=await fetch(API+"/recommend?q=random");
     display(await res.json());
 }
 
-// SMART
 async function smart(){
     let res=await fetch(API+"/smart");
     display(await res.json());
 }
 
-// ML
 async function mlRecommend(){
     let val=sceneInput.value;
     let res=await fetch(API+"/ml?name="+val);
     display(await res.json());
 }
 
-// AI CHAT
+/* CHAT */
 function addMsg(s,t){
     aiChatBox.innerHTML+=`<p><b>${s}:</b> ${t}</p>`;
 }
