@@ -2,6 +2,9 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
 import os
+import requests
+
+TMDB_API_KEY = "6701680a60181e103f2b432a7e39663c"
 
 app = Flask(__name__)
 CORS(app)
@@ -121,6 +124,73 @@ def chat():
         reply = "Tell me your mood or a scene."
 
     return jsonify({"reply": reply})
+
+# -------------------------------
+# TRENDING
+# -------------------------------
+
+@app.route("/trending")
+def trending():
+    url = f"https://api.themoviedb.org/3/trending/movie/day?api_key={TMDB_API_KEY}"
+    data = requests.get(url).json()
+    return jsonify(data.get("results", []))
+
+# -------------------------------
+# GENRE
+# -------------------------------
+
+@app.route("/genre")
+def genre():
+    genre_id = request.args.get("id")
+
+    url = f"https://api.themoviedb.org/3/discover/movie?api_key={TMDB_API_KEY}&with_genres={genre_id}"
+    data = requests.get(url).json()
+
+    return jsonify(data.get("results", []))
+
+# -------------------------------
+# ACTOR
+# -------------------------------
+
+@app.route("/actor")
+def actor():
+    name = request.args.get("name")
+
+    # Step 1: find actor ID
+    url1 = f"https://api.themoviedb.org/3/search/person?api_key={TMDB_API_KEY}&query={name}"
+    data1 = requests.get(url1).json()
+
+    if not data1.get("results"):
+        return jsonify([])
+
+    actor_id = data1["results"][0]["id"]
+
+    # Step 2: get movies
+    url2 = f"https://api.themoviedb.org/3/discover/movie?api_key={TMDB_API_KEY}&with_cast={actor_id}"
+    data2 = requests.get(url2).json()
+
+    return jsonify(data2.get("results", []))
+
+# -------------------------------
+# SIM
+# -------------------------------
+
+@app.route("/similar")
+def similar():
+    movie = request.args.get("name")
+
+    url1 = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={movie}"
+    data1 = requests.get(url1).json()
+
+    if not data1.get("results"):
+        return jsonify([])
+
+    movie_id = data1["results"][0]["id"]
+
+    url2 = f"https://api.themoviedb.org/3/movie/{movie_id}/similar?api_key={TMDB_API_KEY}"
+    data2 = requests.get(url2).json()
+
+    return jsonify(data2.get("results", []))
 
 # -------------------------------
 # RUN (RENDER)
