@@ -211,18 +211,31 @@ let currentMovies=[];
 let answers={};
 
 // DISPLAY WITH REAL POSTERS
-function display(data){
-    let div=document.getElementById("results");
-    div.innerHTML="";
-    currentMovies=data;
+async function getPoster(title){
+    try{
+        let res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=6701680a60181e103f2b432a7e39663c&query=${encodeURIComponent(title)}`);
+        let data = await res.json();
 
-    data.forEach((m,i)=>{
+        if(data.results && data.results.length > 0 && data.results[0].poster_path){
+            return "https://image.tmdb.org/t/p/w500" + data.results[0].poster_path;
+        }
+    }catch(e){}
 
-        let poster = m.poster_path 
-            ? "https://image.tmdb.org/t/p/w500" + m.poster_path
-            : "https://dummyimage.com/300x450/1e0033/c084fc&text=No+Image";
+    return "https://dummyimage.com/300x450/1e0033/c084fc&text=No+Image";
+}
 
-        div.innerHTML+=`
+async function display(data){
+    let div = document.getElementById("results");
+    div.innerHTML = "";
+    currentMovies = data;
+
+    for(let i=0;i<data.length;i++){
+
+        let m = data[i];
+
+        let poster = await getPoster(m.title);
+
+        div.innerHTML += `
         <div class="card" onclick="showDetails(${i})">
             <img src="${poster}">
             <div class="card-content">
@@ -234,7 +247,7 @@ function display(data){
                 </button>
             </div>
         </div>`;
-    });
+    }
 }
 
 // DETAILS
