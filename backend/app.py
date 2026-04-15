@@ -4,7 +4,7 @@ import pandas as pd
 import os
 import requests
 
-# 🔥 NEW (DATABASE)
+# 🔥 DATABASE
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -17,7 +17,7 @@ app = Flask(__name__)
 CORS(app)
 
 # -------------------------------
-# DATABASE (AI MEMORY)
+# DATABASE
 # -------------------------------
 engine = create_engine("sqlite:///users.db")
 Base = declarative_base()
@@ -26,7 +26,6 @@ session = Session()
 
 class UserPref(Base):
     __tablename__ = "preferences"
-
     id = Column(Integer, primary_key=True)
     type = Column(String)
     value = Column(String)
@@ -38,50 +37,47 @@ Base.metadata.create_all(engine)
 # -------------------------------
 movies = pd.read_csv("data/movies.csv")
 
-movies = movies.fillna("")
-movies["overview"] = movies["overview"].astype(str)
-movies["genres"] = movies["genres"].astype(str)
-movies["keywords"] = movies["keywords"].astype(str)
-movies["title"] = movies["title"].astype(str)
+# 🔥 reduce size (IMPORTANT for Render)
+movies = movies.sample(min(2000, len(movies)))
 
+movies = movies.fillna("")
 movies["content"] = (
-    movies["overview"] + " " +
-    movies["genres"] + " " +
-    movies["keywords"] + " " +
-    movies["title"]
+    movies["overview"].astype(str) + " " +
+    movies["genres"].astype(str) + " " +
+    movies["keywords"].astype(str) + " " +
+    movies["title"].astype(str)
 )
 
 # -------------------------------
-# ML MODEL (COSINE SIMILARITY)
+# ML MODEL (LIGHTWEIGHT)
 # -------------------------------
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-print("Training ML model...")
+print("Training lightweight ML model...")
 
-cv = CountVectorizer(max_features=5000, stop_words='english')
-vectors = cv.fit_transform(movies["content"]).toarray()
+cv = CountVectorizer(max_features=3000, stop_words='english')
+vectors = cv.fit_transform(movies["content"])  # ❌ NO toarray()
 
-similarity = cosine_similarity(vectors)
+print("ML ready ✅")
 
-print("ML model ready ✅")
-
+# -------------------------------
+# ML RECOMMEND (NO MEMORY CRASH)
+# -------------------------------
 @app.route("/ml")
 def ml_recommend():
     name = request.args.get("name", "").lower()
 
-    # find movie index
     idx = movies[movies["title"].str.lower() == name].index
-
     if len(idx) == 0:
         return jsonify([])
 
     idx = idx[0]
 
-    # get similarity scores
-    scores = list(enumerate(similarity[idx]))
+    # ✅ compute only needed similarity
+    sim_scores = cosine_similarity(vectors[idx], vectors).flatten()
 
-    # sort by similarity
+    scores = list(enumerate(sim_scores))
     scores = sorted(scores, key=lambda x: x[1], reverse=True)[1:13]
 
     movie_indices = [i[0] for i in scores]
@@ -96,7 +92,7 @@ def home():
     return "FilmGenie Backend Running!"
 
 # -------------------------------
-# TRACK USER (AI LEARNING)
+# TRACK USER
 # -------------------------------
 @app.route("/track")
 def track():
@@ -104,14 +100,13 @@ def track():
     v = request.args.get("value")
 
     if t and v:
-        pref = UserPref(type=t, value=v)
-        session.add(pref)
+        session.add(UserPref(type=t, value=v))
         session.commit()
 
     return jsonify({"status": "saved"})
 
 # -------------------------------
-# SMART AI RECOMMEND
+# SMART AI
 # -------------------------------
 @app.route("/smart")
 def smart():
@@ -132,7 +127,7 @@ def smart():
     return jsonify(result.sample(min(12, len(result))).to_dict(orient="records"))
 
 # -------------------------------
-# RECOMMEND (SCENE)
+# SEARCH
 # -------------------------------
 @app.route("/recommend")
 def recommend():
@@ -158,13 +153,13 @@ def mood():
     mood = request.args.get("mood", "").lower()
 
     if mood == "happy":
-        result = movies[movies["content"].str.contains("comedy|fun|family", case=False, na=False)]
+        result = movies[movies["content"].str.contains("comedy|fun|family", case=False)]
     elif mood == "sad":
-        result = movies[movies["content"].str.contains("drama|emotional|sad", case=False, na=False)]
+        result = movies[movies["content"].str.contains("drama|sad", case=False)]
     elif mood == "romantic":
-        result = movies[movies["content"].str.contains("romance|love", case=False, na=False)]
+        result = movies[movies["content"].str.contains("romance|love", case=False)]
     elif mood == "action":
-        result = movies[movies["content"].str.contains("action|war|thriller", case=False, na=False)]
+        result = movies[movies["content"].str.contains("action|war|thriller", case=False)]
     else:
         result = movies
 
@@ -185,83 +180,71 @@ def personality():
     score = int(request.args.get("score", 5))
 
     if score <= 15:
-        result = movies[movies["content"].str.contains("romance|drama", case=False, na=False)]
+        result = movies[movies["content"].str.contains("romance|drama", case=False)]
     elif score <= 25:
-        result = movies[movies["content"].str.contains("comedy|family", case=False, na=False)]
+        result = movies[movies["content"].str.contains("comedy|family", case=False)]
     else:
-        result = movies[movies["content"].str.contains("action|thriller|war", case=False, na=False)]
+        result = movies[movies["content"].str.contains("action|thriller", case=False)]
 
     return jsonify(result.sample(min(12, len(result))).to_dict(orient="records"))
 
 # -------------------------------
-# CHATBOT
+# CHAT
 # -------------------------------
 @app.route("/chat")
 def chat():
     msg = request.args.get("msg", "").lower()
 
     if "sad" in msg:
-        reply = "Try watching an emotional drama."
+        reply = "Try emotional drama."
     elif "happy" in msg:
-        reply = "Go for a fun comedy!"
+        reply = "Watch comedy!"
     elif "action" in msg:
-        reply = "Watch an action thriller!"
+        reply = "Go for action thriller!"
     else:
-        reply = "Tell me your mood or a scene."
+        reply = "Tell me mood or scene."
 
     return jsonify({"reply": reply})
 
 # -------------------------------
-# TMDB APIs (ADVANCED FEATURES)
+# TMDB APIs
 # -------------------------------
-
 @app.route("/trending")
 def trending():
-    url = f"https://api.themoviedb.org/3/trending/movie/day?api_key={TMDB_API_KEY}"
-    data = requests.get(url).json()
+    data = requests.get(f"https://api.themoviedb.org/3/trending/movie/day?api_key={TMDB_API_KEY}").json()
     return jsonify(data.get("results", []))
 
 @app.route("/genre")
 def genre():
-    genre_id = request.args.get("id")
-    url = f"https://api.themoviedb.org/3/discover/movie?api_key={TMDB_API_KEY}&with_genres={genre_id}"
-    data = requests.get(url).json()
+    gid = request.args.get("id")
+    data = requests.get(f"https://api.themoviedb.org/3/discover/movie?api_key={TMDB_API_KEY}&with_genres={gid}").json()
     return jsonify(data.get("results", []))
 
 @app.route("/actor")
 def actor():
     name = request.args.get("name")
+    d1 = requests.get(f"https://api.themoviedb.org/3/search/person?api_key={TMDB_API_KEY}&query={name}").json()
 
-    url1 = f"https://api.themoviedb.org/3/search/person?api_key={TMDB_API_KEY}&query={name}"
-    data1 = requests.get(url1).json()
-
-    if not data1.get("results"):
+    if not d1.get("results"):
         return jsonify([])
 
-    actor_id = data1["results"][0]["id"]
+    actor_id = d1["results"][0]["id"]
 
-    url2 = f"https://api.themoviedb.org/3/discover/movie?api_key={TMDB_API_KEY}&with_cast={actor_id}"
-    data2 = requests.get(url2).json()
-
-    return jsonify(data2.get("results", []))
+    d2 = requests.get(f"https://api.themoviedb.org/3/discover/movie?api_key={TMDB_API_KEY}&with_cast={actor_id}").json()
+    return jsonify(d2.get("results", []))
 
 @app.route("/similar")
 def similar():
-    movie = request.args.get("name")
+    name = request.args.get("name")
 
-    url1 = f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={movie}"
-    data1 = requests.get(url1).json()
-
-    if not data1.get("results"):
+    d1 = requests.get(f"https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={name}").json()
+    if not d1.get("results"):
         return jsonify([])
 
-    movie_id = data1["results"][0]["id"]
+    mid = d1["results"][0]["id"]
 
-    url2 = f"https://api.themoviedb.org/3/movie/{movie_id}/similar?api_key={TMDB_API_KEY}"
-    data2 = requests.get(url2).json()
-
-    return jsonify(data2.get("results", []))
-
+    d2 = requests.get(f"https://api.themoviedb.org/3/movie/{mid}/similar?api_key={TMDB_API_KEY}").json()
+    return jsonify(d2.get("results", []))
 
 # -------------------------------
 # RUN
