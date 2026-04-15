@@ -210,21 +210,27 @@ const API="https://filmgenie-fr1z.onrender.com";
 let currentMovies=[];
 let answers={};
 
-// DISPLAY
+// DISPLAY WITH REAL POSTERS
 function display(data){
     let div=document.getElementById("results");
     div.innerHTML="";
     currentMovies=data;
 
     data.forEach((m,i)=>{
+
+        let poster = m.poster_path 
+            ? "https://image.tmdb.org/t/p/w500" + m.poster_path
+            : "https://dummyimage.com/300x450/1e0033/c084fc&text=No+Image";
+
         div.innerHTML+=`
         <div class="card" onclick="showDetails(${i})">
+            <img src="${poster}">
             <div class="card-content">
                 <h3>${m.title}</h3>
                 <p>⭐ ${m.vote_average||"N/A"}</p>
 
                 <button onclick="event.stopPropagation(); toggleWatchlist(${i})">
-                ❤️ Wishlist
+                    ❤️ Save
                 </button>
             </div>
         </div>`;
@@ -241,12 +247,14 @@ function showDetails(i){
 }
 function closeModal(){movieModal.style.display="none";}
 
-// ❤️ WISHLIST
+// ❤️ TOGGLE WATCHLIST
 function toggleWatchlist(i){
     let movie=currentMovies[i];
     let list=JSON.parse(localStorage.getItem("watchlist"))||[];
 
-    if(list.find(m=>m.id===movie.id)){
+    let exists=list.find(m=>m.id===movie.id);
+
+    if(exists){
         list=list.filter(m=>m.id!==movie.id);
         alert("Removed ❌");
     } else {
@@ -257,9 +265,44 @@ function toggleWatchlist(i){
     localStorage.setItem("watchlist",JSON.stringify(list));
 }
 
+// SHOW WATCHLIST WITH REMOVE BUTTON
 function showWatchlist(){
     let list=JSON.parse(localStorage.getItem("watchlist"))||[];
-    display(list);
+    let div=document.getElementById("results");
+    div.innerHTML="";
+
+    if(list.length===0){
+        div.innerHTML="<p style='text-align:center'>No saved movies ❤️</p>";
+        return;
+    }
+
+    list.forEach((m)=>{
+
+        let poster = m.poster_path 
+            ? "https://image.tmdb.org/t/p/w500" + m.poster_path
+            : "https://dummyimage.com/300x450/1e0033/c084fc&text=No+Image";
+
+        div.innerHTML+=`
+        <div class="card">
+            <img src="${poster}">
+            <div class="card-content">
+                <h3>${m.title}</h3>
+                <p>⭐ ${m.vote_average||"N/A"}</p>
+
+                <button onclick="removeFromWatchlist(${m.id})">
+                    ❌ Remove
+                </button>
+            </div>
+        </div>`;
+    });
+}
+
+// REMOVE FUNCTION
+function removeFromWatchlist(id){
+    let list=JSON.parse(localStorage.getItem("watchlist"))||[];
+    list=list.filter(m=>m.id!==id);
+    localStorage.setItem("watchlist",JSON.stringify(list));
+    showWatchlist();
 }
 
 // QUIZ
@@ -312,7 +355,7 @@ async function surprise(){
     display(await res.json());
 }
 
-// 🤖 AI CHAT (BACKEND BASED)
+// AI CHAT
 function addMsg(s,t){
     aiChatBox.innerHTML+=`<p><b>${s}:</b> ${t}</p>`;
     aiChatBox.scrollTop=aiChatBox.scrollHeight;
