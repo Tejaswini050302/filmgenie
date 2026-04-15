@@ -86,15 +86,14 @@ button {
     cursor:pointer;
 }
 
-.selected {
-    background:#c084fc !important;
-}
+.selected { background:#c084fc !important; }
 
+/* MODALS */
 #movieModal, #quizModal {
     display:none;
     position:fixed;
-    top:0;left:0;
-    width:100%;height:100%;
+    top:0; left:0;
+    width:100%; height:100%;
     background:rgba(0,0,0,0.85);
     justify-content:center;
     align-items:center;
@@ -107,7 +106,7 @@ button {
     width:350px;
 }
 
-/* AI Chat */
+/* AI CHAT */
 #aiChatBox {
     position:fixed;
     bottom:80px;
@@ -137,6 +136,7 @@ button {
 <button onclick="mood('romantic')">❤️ Romantic</button>
 <button onclick="mood('action')">🔥 Action</button>
 <button onclick="surprise()">🎲 Surprise</button>
+<button onclick="showWatchlist()">❤️ Watchlist</button>
 <button onclick="openQuiz()">🧠 Quiz</button>
 </div>
 
@@ -206,40 +206,29 @@ Send
 <script>
 
 const API="https://filmgenie-fr1z.onrender.com";
-const TMDB_API_KEY="6701680a60181e103f2b432a7e39663c";
 
 let currentMovies=[];
 let answers={};
 
-// POSTER
-async function getPoster(title){
-    let res=await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}`);
-    let data=await res.json();
-    if(data.results.length>0){
-        return "https://image.tmdb.org/t/p/w500"+data.results[0].poster_path;
-    }
-    return "https://dummyimage.com/300x450/1e0033/c084fc&text=FilmGenie";
-}
-
 // DISPLAY
-async function display(data){
+function display(data){
     let div=document.getElementById("results");
     div.innerHTML="";
     currentMovies=data;
 
-    for(let i=0;i<data.length;i++){
-        let m=data[i];
-        let poster=await getPoster(m.title);
-
+    data.forEach((m,i)=>{
         div.innerHTML+=`
         <div class="card" onclick="showDetails(${i})">
-            <img src="${poster}">
             <div class="card-content">
                 <h3>${m.title}</h3>
                 <p>⭐ ${m.vote_average||"N/A"}</p>
+
+                <button onclick="event.stopPropagation(); toggleWatchlist(${i})">
+                ❤️ Wishlist
+                </button>
             </div>
         </div>`;
-    }
+    });
 }
 
 // DETAILS
@@ -252,6 +241,27 @@ function showDetails(i){
 }
 function closeModal(){movieModal.style.display="none";}
 
+// ❤️ WISHLIST
+function toggleWatchlist(i){
+    let movie=currentMovies[i];
+    let list=JSON.parse(localStorage.getItem("watchlist"))||[];
+
+    if(list.find(m=>m.id===movie.id)){
+        list=list.filter(m=>m.id!==movie.id);
+        alert("Removed ❌");
+    } else {
+        list.push(movie);
+        alert("Added ❤️");
+    }
+
+    localStorage.setItem("watchlist",JSON.stringify(list));
+}
+
+function showWatchlist(){
+    let list=JSON.parse(localStorage.getItem("watchlist"))||[];
+    display(list);
+}
+
 // QUIZ
 function selectOption(q,s,btn){
     answers[q]=s;
@@ -260,11 +270,7 @@ function selectOption(q,s,btn){
     btn.classList.add("selected");
 }
 
-function openQuiz(){
-    answers={};
-    personalityResult.innerText="";
-    quizModal.style.display="flex";
-}
+function openQuiz(){answers={};quizModal.style.display="flex";}
 function closeQuiz(){quizModal.style.display="none";}
 
 function getType(score){
@@ -278,19 +284,19 @@ async function submitQuiz(){
         alert("Answer all questions!");
         return;
     }
+
     let total=Object.values(answers).reduce((a,b)=>a+b,0);
     personalityResult.innerText="You are: "+getType(total);
 
     let res=await fetch(API+"/personality?score="+total);
-    let data=await res.json();
+    display(await res.json());
 
-    setTimeout(()=>{closeQuiz();display(data);},1500);
+    setTimeout(closeQuiz,1500);
 }
 
 // SEARCH
 async function scene(){
-    let val=sceneInput.value;
-    let res=await fetch(API+"/recommend?q="+val);
+    let res=await fetch(API+"/recommend?q="+sceneInput.value);
     display(await res.json());
 }
 
@@ -306,7 +312,7 @@ async function surprise(){
     display(await res.json());
 }
 
-// 🤖 AI CHAT
+// 🤖 AI CHAT (BACKEND BASED)
 function addMsg(s,t){
     aiChatBox.innerHTML+=`<p><b>${s}:</b> ${t}</p>`;
     aiChatBox.scrollTop=aiChatBox.scrollHeight;
@@ -317,38 +323,30 @@ async function askAI(){
     addMsg("You",input);
 
     if(input.includes("trending")){
-        let r=await fetch(`https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_API_KEY}`);
-        let d=await r.json();
-        addMsg("AI","🔥 Trending movies");
-        display(d.results);return;
+        let r=await fetch(API+"/trending");
+        display(await r.json());
+        return;
     }
 
-    let genres={action:28,comedy:35,romance:10749,drama:18};
-    for(let g in genres){
-        if(input.includes(g)){
-            let r=await fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genres[g]}`);
-            let d=await r.json();
-            addMsg("AI","🎬 "+g+" movies");
-            display(d.results);return;
-        }
+    if(input.includes("action")) display(await (await fetch(API+"/genre?id=28")).json());
+    else if(input.includes("comedy")) display(await (await fetch(API+"/genre?id=35")).json());
+    else if(input.includes("romance")) display(await (await fetch(API+"/genre?id=10749")).json());
+    else if(input.includes("actor") || input.includes("movies of")){
+        let name=input.replace("movies of","").replace("actor","").trim();
+        let r=await fetch(API+"/actor?name="+name);
+        display(await r.json());
     }
-
-    if(input.includes("like")){
-        let movie=input.split("like")[1].trim();
-        let r1=await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${movie}`);
-        let d1=await r1.json();
-        let id=d1.results[0]?.id;
-        if(!id){addMsg("AI","Not found");return;}
-        let r2=await fetch(`https://api.themoviedb.org/3/movie/${id}/similar?api_key=${TMDB_API_KEY}`);
-        let d2=await r2.json();
-        display(d2.results);return;
+    else if(input.includes("like")){
+        let name=input.split("like")[1].trim();
+        let r=await fetch(API+"/similar?name="+name);
+        display(await r.json());
     }
-
-    // default
-    let r=await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${input}`);
-    let d=await r.json();
-    display(d.results);
+    else{
+        let r=await fetch(API+"/recommend?q="+input);
+        display(await r.json());
+    }
 }
+
 </script>
 
 </body>
