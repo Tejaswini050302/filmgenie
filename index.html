@@ -128,6 +128,8 @@ button {
 <div class="search-bar">
 <input id="sceneInput" placeholder="Search movies...">
 <button onclick="scene()">Search</button>
+<button onclick="mlRecommend()">🎯 Similar AI</button>
+<button onclick="smart()">🧠 Smart AI</button>
 </div>
 
 <div class="filters">
@@ -210,7 +212,7 @@ const API="https://filmgenie-fr1z.onrender.com";
 let currentMovies=[];
 let answers={};
 
-// DISPLAY WITH REAL POSTERS
+// 🔥 GET POSTER FROM TMDB
 async function getPoster(title){
     try{
         let res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=6701680a60181e103f2b432a7e39663c&query=${encodeURIComponent(title)}`);
@@ -224,18 +226,17 @@ async function getPoster(title){
     return "https://dummyimage.com/300x450/1e0033/c084fc&text=No+Image";
 }
 
+// DISPLAY
 async function display(data){
-    let div = document.getElementById("results");
-    div.innerHTML = "";
-    currentMovies = data;
+    let div=document.getElementById("results");
+    div.innerHTML="";
+    currentMovies=data;
 
     for(let i=0;i<data.length;i++){
-
-        let m = data[i];
-
+        let m=data[i];
         let poster = await getPoster(m.title);
 
-        div.innerHTML += `
+        div.innerHTML+=`
         <div class="card" onclick="showDetails(${i})">
             <img src="${poster}">
             <div class="card-content">
@@ -260,7 +261,7 @@ function showDetails(i){
 }
 function closeModal(){movieModal.style.display="none";}
 
-// ❤️ TOGGLE WATCHLIST
+// WATCHLIST
 function toggleWatchlist(i){
     let movie=currentMovies[i];
     let list=JSON.parse(localStorage.getItem("watchlist"))||[];
@@ -276,41 +277,31 @@ function toggleWatchlist(i){
     }
 
     localStorage.setItem("watchlist",JSON.stringify(list));
+
+    fetch(API+"/track?type=movie&value="+movie.title);
 }
 
-// SHOW WATCHLIST WITH REMOVE BUTTON
 function showWatchlist(){
     let list=JSON.parse(localStorage.getItem("watchlist"))||[];
     let div=document.getElementById("results");
     div.innerHTML="";
 
-    if(list.length===0){
-        div.innerHTML="<p style='text-align:center'>No saved movies ❤️</p>";
-        return;
-    }
-
     list.forEach((m)=>{
-
         let poster = m.poster_path 
             ? "https://image.tmdb.org/t/p/w500" + m.poster_path
-            : "https://dummyimage.com/300x450/1e0033/c084fc&text=No+Image";
+            : "";
 
         div.innerHTML+=`
         <div class="card">
             <img src="${poster}">
             <div class="card-content">
                 <h3>${m.title}</h3>
-                <p>⭐ ${m.vote_average||"N/A"}</p>
-
-                <button onclick="removeFromWatchlist(${m.id})">
-                    ❌ Remove
-                </button>
+                <button onclick="removeFromWatchlist(${m.id})">❌ Remove</button>
             </div>
         </div>`;
     });
 }
 
-// REMOVE FUNCTION
 function removeFromWatchlist(id){
     let list=JSON.parse(localStorage.getItem("watchlist"))||[];
     list=list.filter(m=>m.id!==id);
@@ -336,28 +327,24 @@ function getType(score){
 }
 
 async function submitQuiz(){
-    if(Object.keys(answers).length<5){
-        alert("Answer all questions!");
-        return;
-    }
-
     let total=Object.values(answers).reduce((a,b)=>a+b,0);
     personalityResult.innerText="You are: "+getType(total);
 
     let res=await fetch(API+"/personality?score="+total);
     display(await res.json());
-
-    setTimeout(closeQuiz,1500);
 }
 
 // SEARCH
 async function scene(){
-    let res=await fetch(API+"/recommend?q="+sceneInput.value);
+    let val=sceneInput.value;
+    fetch(API+"/track?type=search&value="+val);
+    let res=await fetch(API+"/recommend?q="+val);
     display(await res.json());
 }
 
 // MOOD
 async function mood(type){
+    fetch(API+"/track?type=mood&value="+type);
     let res=await fetch(API+"/mood?mood="+type);
     display(await res.json());
 }
@@ -368,39 +355,30 @@ async function surprise(){
     display(await res.json());
 }
 
+// SMART
+async function smart(){
+    let res=await fetch(API+"/smart");
+    display(await res.json());
+}
+
+// ML
+async function mlRecommend(){
+    let val=sceneInput.value;
+    let res=await fetch(API+"/ml?name="+val);
+    display(await res.json());
+}
+
 // AI CHAT
 function addMsg(s,t){
     aiChatBox.innerHTML+=`<p><b>${s}:</b> ${t}</p>`;
-    aiChatBox.scrollTop=aiChatBox.scrollHeight;
 }
 
 async function askAI(){
-    let input=aiInput.value.toLowerCase();
+    let input=aiInput.value;
     addMsg("You",input);
 
-    if(input.includes("trending")){
-        let r=await fetch(API+"/trending");
-        display(await r.json());
-        return;
-    }
-
-    if(input.includes("action")) display(await (await fetch(API+"/genre?id=28")).json());
-    else if(input.includes("comedy")) display(await (await fetch(API+"/genre?id=35")).json());
-    else if(input.includes("romance")) display(await (await fetch(API+"/genre?id=10749")).json());
-    else if(input.includes("actor") || input.includes("movies of")){
-        let name=input.replace("movies of","").replace("actor","").trim();
-        let r=await fetch(API+"/actor?name="+name);
-        display(await r.json());
-    }
-    else if(input.includes("like")){
-        let name=input.split("like")[1].trim();
-        let r=await fetch(API+"/similar?name="+name);
-        display(await r.json());
-    }
-    else{
-        let r=await fetch(API+"/recommend?q="+input);
-        display(await r.json());
-    }
+    let res=await fetch(API+"/recommend?q="+input);
+    display(await res.json());
 }
 
 </script>
