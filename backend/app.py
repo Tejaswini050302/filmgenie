@@ -52,6 +52,43 @@ movies["content"] = (
 )
 
 # -------------------------------
+# ML MODEL (COSINE SIMILARITY)
+# -------------------------------
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+print("Training ML model...")
+
+cv = CountVectorizer(max_features=5000, stop_words='english')
+vectors = cv.fit_transform(movies["content"]).toarray()
+
+similarity = cosine_similarity(vectors)
+
+print("ML model ready ✅")
+
+@app.route("/ml")
+def ml_recommend():
+    name = request.args.get("name", "").lower()
+
+    # find movie index
+    idx = movies[movies["title"].str.lower() == name].index
+
+    if len(idx) == 0:
+        return jsonify([])
+
+    idx = idx[0]
+
+    # get similarity scores
+    scores = list(enumerate(similarity[idx]))
+
+    # sort by similarity
+    scores = sorted(scores, key=lambda x: x[1], reverse=True)[1:13]
+
+    movie_indices = [i[0] for i in scores]
+
+    return jsonify(movies.iloc[movie_indices].to_dict(orient="records"))
+
+# -------------------------------
 # HOME
 # -------------------------------
 @app.route("/")
@@ -224,6 +261,7 @@ def similar():
     data2 = requests.get(url2).json()
 
     return jsonify(data2.get("results", []))
+
 
 # -------------------------------
 # RUN
