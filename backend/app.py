@@ -4,26 +4,46 @@ import pandas as pd
 import os
 import requests
 
+# 🔥 NEW (DATABASE)
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.orm import declarative_base, sessionmaker
+
+# -------------------------------
+# CONFIG
+# -------------------------------
 TMDB_API_KEY = "6701680a60181e103f2b432a7e39663c"
 
 app = Flask(__name__)
 CORS(app)
 
 # -------------------------------
+# DATABASE (AI MEMORY)
+# -------------------------------
+engine = create_engine("sqlite:///users.db")
+Base = declarative_base()
+Session = sessionmaker(bind=engine)
+session = Session()
+
+class UserPref(Base):
+    __tablename__ = "preferences"
+
+    id = Column(Integer, primary_key=True)
+    type = Column(String)
+    value = Column(String)
+
+Base.metadata.create_all(engine)
+
+# -------------------------------
 # LOAD DATA
 # -------------------------------
 movies = pd.read_csv("data/movies.csv")
 
-# 🔥 FIX NaN → valid JSON
 movies = movies.fillna("")
-
-# Convert to string
 movies["overview"] = movies["overview"].astype(str)
 movies["genres"] = movies["genres"].astype(str)
 movies["keywords"] = movies["keywords"].astype(str)
 movies["title"] = movies["title"].astype(str)
 
-# 🔥 COMBINE TEXT (SMART SEARCH)
 movies["content"] = (
     movies["overview"] + " " +
     movies["genres"] + " " +
@@ -39,13 +59,48 @@ def home():
     return "FilmGenie Backend Running!"
 
 # -------------------------------
+# TRACK USER (AI LEARNING)
+# -------------------------------
+@app.route("/track")
+def track():
+    t = request.args.get("type")
+    v = request.args.get("value")
+
+    if t and v:
+        pref = UserPref(type=t, value=v)
+        session.add(pref)
+        session.commit()
+
+    return jsonify({"status": "saved"})
+
+# -------------------------------
+# SMART AI RECOMMEND
+# -------------------------------
+@app.route("/smart")
+def smart():
+    prefs = session.query(UserPref).all()
+
+    if not prefs:
+        return jsonify(movies.sample(12).to_dict(orient="records"))
+
+    keywords = " ".join([p.value for p in prefs])
+
+    result = movies[
+        movies["content"].str.contains(keywords, case=False, na=False)
+    ]
+
+    if result.empty:
+        result = movies
+
+    return jsonify(result.sample(min(12, len(result))).to_dict(orient="records"))
+
+# -------------------------------
 # RECOMMEND (SCENE)
 # -------------------------------
 @app.route("/recommend")
 def recommend():
     query = request.args.get("q", "").lower()
 
-    # 🎲 TRUE RANDOM MODE
     if query == "random":
         return jsonify(movies.sample(12).to_dict(orient="records"))
 
@@ -53,11 +108,11 @@ def recommend():
         movies["content"].str.lower().str.contains(query, na=False)
     ]
 
-    # fallback if nothing found
     if results.empty:
         return jsonify(movies.sample(12).to_dict(orient="records"))
 
     return jsonify(results.sample(min(12, len(results))).to_dict(orient="records"))
+
 # -------------------------------
 # MOOD
 # -------------------------------
@@ -67,20 +122,15 @@ def mood():
 
     if mood == "happy":
         result = movies[movies["content"].str.contains("comedy|fun|family", case=False, na=False)]
-
     elif mood == "sad":
         result = movies[movies["content"].str.contains("drama|emotional|sad", case=False, na=False)]
-
     elif mood == "romantic":
         result = movies[movies["content"].str.contains("romance|love", case=False, na=False)]
-
     elif mood == "action":
         result = movies[movies["content"].str.contains("action|war|thriller", case=False, na=False)]
-
     else:
         result = movies
 
-    # 🎲 RANDOMIZE RESULTS
     return jsonify(result.sample(min(12, len(result))).to_dict(orient="records"))
 
 # -------------------------------
@@ -90,17 +140,16 @@ def mood():
 def surprise():
     return jsonify(movies.sample(10).to_dict(orient="records"))
 
-#--------------------------------
+# -------------------------------
 # PERSONALITY
-#-------------------------------
-
+# -------------------------------
 @app.route("/personality")
 def personality():
     score = int(request.args.get("score", 5))
 
-    if score <= 3:
+    if score <= 15:
         result = movies[movies["content"].str.contains("romance|drama", case=False, na=False)]
-    elif score <= 7:
+    elif score <= 25:
         result = movies[movies["content"].str.contains("comedy|family", case=False, na=False)]
     else:
         result = movies[movies["content"].str.contains("action|thriller|war", case=False, na=False)]
@@ -126,7 +175,7 @@ def chat():
     return jsonify({"reply": reply})
 
 # -------------------------------
-# TRENDING
+# TMDB APIs (ADVANCED FEATURES)
 # -------------------------------
 
 @app.route("/trending")
@@ -135,28 +184,17 @@ def trending():
     data = requests.get(url).json()
     return jsonify(data.get("results", []))
 
-# -------------------------------
-# GENRE
-# -------------------------------
-
 @app.route("/genre")
 def genre():
     genre_id = request.args.get("id")
-
     url = f"https://api.themoviedb.org/3/discover/movie?api_key={TMDB_API_KEY}&with_genres={genre_id}"
     data = requests.get(url).json()
-
     return jsonify(data.get("results", []))
-
-# -------------------------------
-# ACTOR
-# -------------------------------
 
 @app.route("/actor")
 def actor():
     name = request.args.get("name")
 
-    # Step 1: find actor ID
     url1 = f"https://api.themoviedb.org/3/search/person?api_key={TMDB_API_KEY}&query={name}"
     data1 = requests.get(url1).json()
 
@@ -165,15 +203,10 @@ def actor():
 
     actor_id = data1["results"][0]["id"]
 
-    # Step 2: get movies
     url2 = f"https://api.themoviedb.org/3/discover/movie?api_key={TMDB_API_KEY}&with_cast={actor_id}"
     data2 = requests.get(url2).json()
 
     return jsonify(data2.get("results", []))
-
-# -------------------------------
-# SIM
-# -------------------------------
 
 @app.route("/similar")
 def similar():
@@ -193,7 +226,7 @@ def similar():
     return jsonify(data2.get("results", []))
 
 # -------------------------------
-# RUN (RENDER)
+# RUN
 # -------------------------------
 if __name__ == "__main__":
     print("APP STARTED SUCCESSFULLY")
